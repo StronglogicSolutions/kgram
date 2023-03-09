@@ -1,0 +1,3 @@
+[submodule "third_party/kproto"]
+	path = third_party/kproto
+	url = https://github.com/StronglogicSolutions/kproto
