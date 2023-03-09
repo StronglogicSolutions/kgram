@@ -1,4 +1,12 @@
 #include <napi.h>
+#include <zmq.hpp>
+
+class server
+{
+
+private:
+  zmq::socket_t socket;
+};
 
 void callback(const Napi::CallbackInfo& info)
 {
