@@ -1,24 +1,32 @@
-#include <napi.h>
-#include <zmq.hpp>
+#include "types.hpp"
+#include "server.hpp"
+#include <thread>
 
-class server
+static void
+start_server()
 {
-
-private:
-  zmq::socket_t socket;
-};
-
-void callback(const Napi::CallbackInfo& info)
-{
-  Napi::Env      env = info.Env();
-  Napi::Function cb  = info[0].As<Napi::Function>();
-  cb.Call(env.Global(), {Napi::String::New(env, "Hello logic")});
+  std::thread{[]
+  {
+    kiq::server server{};
+    while (server.is_active())
+    {
+      kutils::log("Server running!");
+      std::this_thread::sleep_for(std::chrono::milliseconds(300));
+    }
+  }}.detach();
 }
 
-Napi::Object Init(Napi::Env env, Napi::Object exports)
+void callback(const node_inf_t& info)
 {
-  return Napi::Function::New(env, callback);
+  node_env_t      env = info.Env();
+  node_fnc_t cb  = info[0].As<node_fnc_t>();
+  cb.Call(env.Global(), { node_str_t::New(env, "Hello logic") });
+}
+
+node_obj_t Init(node_env_t env, node_obj_t exports)
+{
+  start_server();
+  return node_fnc_t::New(env, callback);
 }
 
 NODE_API_MODULE(Test, Init)
-
