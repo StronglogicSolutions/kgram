@@ -6,9 +6,9 @@ const std::string RX_ADDR{"tcp://0.0.0.0:28475"};
 
 namespace kiq
 {
+using ipc_msg_t = ipc_message::u_ipc_msg_ptr;
 class server
 {
-using ipc_msg_t = ipc_message::u_ipc_msg_ptr;
 public:
   server()
   : context{1},
@@ -30,6 +30,16 @@ public:
   bool is_active() const
   {
     return active;
+  }
+
+  bool has_msg() const
+  {
+    return (last_msg != nullptr);
+  }
+
+  ipc_msg_t get_msg()
+  {
+    return std::move(last_msg);
   }
 
 
@@ -76,17 +86,18 @@ private:
     return DeserializeIPCMessage(std::move(received_message));
   }
 
-  void process(ipc_msg_t msg) const
+  void process(ipc_msg_t msg)
   {
     if (!msg)
       kutils::log("Ignoring null message");
-    std::move(msg);
+    last_msg = std::move(msg);
   }
 
   zmq::context_t    context;
   zmq::socket_t     socket;
   std::future<void> future;
   bool              active{true};
+  ipc_msg_t         last_msg;
 };
 
 } // ns

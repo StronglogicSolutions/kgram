@@ -1,7 +1,7 @@
 {
   "targets": [
     {
-      "target_name": "Test",
+      "target_name": "kgramIPC",
       "cflags!": [ "-fno-exceptions" ],
       "cflags_cc!": [ "-fno-exceptions" ],
       "sources": [ "cpp/native.cpp" ],
