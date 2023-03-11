@@ -1,39 +1,45 @@
+#include <deque>
 #include <zmq.hpp>
 #include <kutils.hpp>
 #include <kproto/ipc.hpp>
-
 
 static const std::string RX_ADDR{"tcp://0.0.0.0:28475"};
 namespace kiq
 {
 using ipc_msg_t = ipc_message::u_ipc_msg_ptr;
-
+//-------------------------------------------------------------
 class request_converter
 {
 public:
 using request_t = std::vector<std::string>;
+//----------------------------------
+  request_t receive(ipc_msg_t msg)
+  {
+    request_t  req;
+    const auto type = msg->type();
 
-request_t receive(ipc_msg_t msg)
-{
-  request_t  req;
-  const auto type = msg->type();
+    if (type >= constants::IPC_PLATFORM_TYPE)
+      m_dispatch_table[type](std::move(msg));
 
-  if (type >= constants::IPC_PLATFORM_TYPE)
-    m_dispatch_table[type](std::move(msg));
-
-  return req;
-}
+    return req;
+  }
 
 private:
 using msg_handler_t = std::function<void(ipc_msg_t)>;
 using dispatch_t    = std::map<uint8_t, msg_handler_t>;
-
+//----------------------------------
+  void on_request(ipc_msg_t msg) const
+  {
+    kiq::platform_request* request = static_cast<platform_request*>(msg.get());
+    kutils::log(request->to_string());
+  }
+//----------------------------------
   dispatch_t m_dispatch_table{
-    {constants::IPC_PLATFORM_TYPE,    [](ipc_msg_t msg) {}},
-    {constants::IPC_PLATFORM_REQUEST, [](ipc_msg_t msg) {}},
+    {constants::IPC_PLATFORM_TYPE,    [this](ipc_msg_t msg) {                             }},
+    {constants::IPC_PLATFORM_REQUEST, [this](ipc_msg_t msg) { on_request(std::move(msg)); }},
   };
 };
-
+//-------------------------------------------------------------
 class server
 {
 public:
@@ -61,7 +67,9 @@ public:
 //----------------------------------
   ipc_msg_t get_msg()
   {
-    return std::move(m_msgs.front());
+    ipc_msg_t msg = std::move(m_msgs.front());
+    m_msgs.pop_front();
+    return std::move(msg);
   }
 //----------------------------------
   bool has_msgs() const
@@ -108,6 +116,6 @@ private:
   zmq::socket_t               socket;
   std::future<void>           future;
   bool                        active{true};
-  std::vector<kiq::ipc_msg_t> m_msgs;
+  std::deque<kiq::ipc_msg_t> m_msgs;
 };
 }
