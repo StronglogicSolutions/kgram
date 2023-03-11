@@ -11,18 +11,16 @@ namespace
 //--------------------NODE----------------------------------------
 void callback(const node_inf_t& info)
 {
-  std::string msg;
+  std::string msg = "Waiting for request";
   node_env_t  env = info.Env();
   node_fnc_t  cb  = info[0].As<node_fnc_t>();
 
   if (g_server.has_msgs())
   {
     kiq::ipc_msg_t ipc_msg = g_server.get_msg();
-                       msg = std::string{"Received: " + std::to_string(ipc_msg->type())};
+                       msg = "Processed message";
     g_converter.receive(std::move(ipc_msg));
   }
-  else
-    msg = "Waiting for request";
 
   cb.Call(env.Global(), { node_str_t::New(env, msg)});
 }
