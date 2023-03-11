@@ -32,26 +32,25 @@ public:
     return active;
   }
 
-  bool has_msg() const
-  {
-    return (last_msg != nullptr);
-  }
-
   ipc_msg_t get_msg()
   {
-    return std::move(last_msg);
+    return std::move(m_msgs.front());
   }
 
+  bool has_msgs() const
+  {
+    return !m_msgs.empty();
+  }
 
 private:
 
   void run()
   {
     while (active)
-      process(ReceiveIPCMessage());
+      recv();
   }
 
-  ipc_msg_t ReceiveIPCMessage()
+  ipc_msg_t recv()
   {
     using namespace kutils;
     using buffers_t = std::vector<ipc_message::byte_buffer>;
@@ -83,21 +82,14 @@ private:
       received_message.push_back(std::vector<unsigned char>{static_cast<char*>(message.data()), static_cast<char*>(message.data()) + message.size()});
     }
 
-    return DeserializeIPCMessage(std::move(received_message));
+    m_msgs.push_back(DeserializeIPCMessage(std::move(received_message)));
   }
 
-  void process(ipc_msg_t msg)
-  {
-    if (!msg)
-      kutils::log("Ignoring null message");
-    last_msg = std::move(msg);
-  }
-
-  zmq::context_t    context;
-  zmq::socket_t     socket;
-  std::future<void> future;
-  bool              active{true};
-  ipc_msg_t         last_msg;
+  zmq::context_t              context;
+  zmq::socket_t               socket;
+  std::future<void>           future;
+  bool                        active{true};
+  std::vector<kiq::ipc_msg_t> m_msgs;
 };
 
 } // ns
