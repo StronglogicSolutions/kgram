@@ -2,11 +2,38 @@
 #include <kutils.hpp>
 #include <kproto/ipc.hpp>
 
-const std::string RX_ADDR{"tcp://0.0.0.0:28475"};
 
+static const std::string RX_ADDR{"tcp://0.0.0.0:28475"};
 namespace kiq
 {
 using ipc_msg_t = ipc_message::u_ipc_msg_ptr;
+
+class request_converter
+{
+public:
+using request_t = std::vector<std::string>;
+
+request_t receive(ipc_msg_t msg)
+{
+  request_t  req;
+  const auto type = msg->type();
+
+  if (type >= constants::IPC_PLATFORM_TYPE)
+    m_dispatch_table[type](std::move(msg));
+
+  return req;
+}
+
+private:
+using msg_handler_t = std::function<void(ipc_msg_t)>;
+using dispatch_t    = std::map<uint8_t, msg_handler_t>;
+
+  dispatch_t m_dispatch_table{
+    {constants::IPC_PLATFORM_TYPE,    [](ipc_msg_t msg) {}},
+    {constants::IPC_PLATFORM_REQUEST, [](ipc_msg_t msg) {}},
+  };
+};
+
 class server
 {
 public:
@@ -19,77 +46,68 @@ public:
     socket.bind(RX_ADDR);
     future = std::async(std::launch::async, [this] { run(); });
   }
-
+//----------------------------------
   ~server()
   {
     active = false;
     if (future.valid())
       future.wait();
   }
-
+//----------------------------------
   bool is_active() const
   {
     return active;
   }
-
+//----------------------------------
   ipc_msg_t get_msg()
   {
     return std::move(m_msgs.front());
   }
-
+//----------------------------------
   bool has_msgs() const
   {
     return !m_msgs.empty();
   }
 
 private:
-
   void run()
   {
     while (active)
       recv();
   }
-
-  ipc_msg_t recv()
+//----------------------------------
+  void recv()
   {
     using namespace kutils;
     using buffers_t = std::vector<ipc_message::byte_buffer>;
 
     zmq::message_t identity;
 
-    if (!socket.recv(&identity))
+    if (!socket.recv(&identity) || identity.empty())
     {
       log("Socket failed to receive");
-      return nullptr;
+      return;
     }
 
-    if (identity.empty())
-    {
-      log("Rejecting message from ", identity.to_string().c_str());
-      return nullptr;
-    }
-
-    buffers_t      received_message;
-    zmq::message_t message;
+    buffers_t      buffer;
+    zmq::message_t msg;
     int            more_flag{1};
 
-    while (more_flag)
+  while (more_flag)
     {
-      socket.recv(&message, static_cast<int>(zmq::recv_flags::none));
+      socket.recv(&msg, static_cast<int>(zmq::recv_flags::none));
       size_t size = sizeof(more_flag);
       socket.getsockopt(ZMQ_RCVMORE, &more_flag, &size);
-
-      received_message.push_back(std::vector<unsigned char>{static_cast<char*>(message.data()), static_cast<char*>(message.data()) + message.size()});
+      buffer.push_back(std::vector<unsigned char>{static_cast<char*>(msg.data()), static_cast<char*>(msg.data()) + msg.size()});
     }
 
-    m_msgs.push_back(DeserializeIPCMessage(std::move(received_message)));
+    m_msgs.push_back(DeserializeIPCMessage(std::move(buffer)));
   }
-
+//----------------------------------
   zmq::context_t              context;
   zmq::socket_t               socket;
   std::future<void>           future;
   bool                        active{true};
   std::vector<kiq::ipc_msg_t> m_msgs;
 };
-
-} // ns
+}

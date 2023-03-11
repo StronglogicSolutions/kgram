@@ -4,7 +4,8 @@
 
 namespace
 {
-  kiq::server server;
+  kiq::server            g_server;
+  kiq::request_converter g_converter;
 }
 
 //--------------------NODE----------------------------------------
@@ -14,8 +15,12 @@ void callback(const node_inf_t& info)
   node_env_t  env = info.Env();
   node_fnc_t  cb  = info[0].As<node_fnc_t>();
 
-  if (server.has_msgs())
-    msg = std::string{"Received: " + std::to_string(server.get_msg()->type())};
+  if (g_server.has_msgs())
+  {
+    kiq::ipc_msg_t ipc_msg = g_server.get_msg();
+                       msg = std::string{"Received: " + std::to_string(ipc_msg->type())};
+    g_converter.receive(std::move(ipc_msg));
+  }
   else
     msg = "Waiting for request";
 
