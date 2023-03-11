@@ -13,7 +13,7 @@ class IGClient
   public getName()                                     : string  { return this.name }
   public post(text : string, media : Array<string>)    : boolean { return true }
 
-  private name;
+  private name: string;
 
 }
 
