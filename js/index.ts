@@ -1,7 +1,9 @@
-const GetMessage  = require('bindings')('kgramIPC')
-const { GetURLS } = require('./util')
-//----------------------------------
+import bindings from 'bindings'
+import { GetURLS } from './util'
+import type { request } from './util'
 
+const GetMessage = bindings('kgramIPC')
+//----------------------------------
 class IGClient
 {
   constructor()
@@ -16,14 +18,6 @@ class IGClient
 
   private name: string;
 
-}
-//---------------------------------
-interface request
-{
-  user:  string
-  text:  string
-  urls:  string
-  media: Array<string>
 }
 //----------------------------------
 function run()
