@@ -1,4 +1,5 @@
-const GetMessage = require('bindings')('kgramIPC')
+const GetMessage  = require('bindings')('kgramIPC')
+const { GetURLS } = require('./util')
 //----------------------------------
 
 class IGClient
@@ -16,11 +17,27 @@ class IGClient
   private name: string;
 
 }
-
+//---------------------------------
+interface request
+{
+  user:  string
+  text:  string
+  urls:  string
+  media: Array<string>
+}
 //----------------------------------
 function run()
 {
-  setInterval(() => GetMessage(msg => console.log(msg)), 300)
+  const client = new IGClient()
+  setInterval(() => GetMessage((msg: request | string) =>
+  {
+    if (typeof msg !== 'string')
+    {
+      msg.media = GetURLS(msg.urls)
+      client.post(msg.text, msg.media)
+    }
+    console.log(msg)
+  }), 300)
 }
 
 run()
