@@ -20,7 +20,7 @@ export interface credentials
   name: string
   pass: string
 }
-
+//---------------------------------
 export function GetCredentials(user: string) : credentials
 {
   const credentials = { name: "" , pass: "" }
