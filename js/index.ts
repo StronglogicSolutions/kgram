@@ -1,6 +1,6 @@
 import bindings from 'bindings'
-import { GetURLS } from './util'
-import type { request } from './util'
+import { GetURLS, GetCredentials } from './util'
+import type { request, credentials } from './util'
 
 const GetMessage = bindings('kgramIPC')
 //----------------------------------
@@ -13,10 +13,19 @@ class IGClient
 
   public init()                                        : boolean { return true }
   public info()                                        : boolean { return true }
-  public getName()                                     : string  { return this.name }
-  public post(text : string, media : Array<string>)    : boolean { return true }
+  public getname()                                     : string  { return this.name }
+  public set(creds: credentials)                       : void    { this.user = creds.name; this.pass = creds.pass }
+  public post(text : string, media : Array<string>)    : boolean
+  {
+    if (!this.user || !this.pass)
+      throw Error("Credentials not set")
+
+    return true;
+  }
 
   private name: string;
+  private user: string;
+  private pass: string;
 
 }
 //----------------------------------
@@ -28,6 +37,7 @@ function run()
     if (typeof msg !== 'string')
     {
       msg.media = GetURLS(msg.urls)
+      client.set(GetCredentials(msg.user))
       client.post(msg.text, msg.media)
     }
     console.log(msg)
