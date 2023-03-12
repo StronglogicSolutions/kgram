@@ -2,20 +2,37 @@
 #include <zmq.hpp>
 #include <kutils.hpp>
 #include <kproto/ipc.hpp>
+#include "types.hpp"
 
 static const std::string RX_ADDR{"tcp://0.0.0.0:28475"};
+//----------------------------------------------------------------
 namespace kiq
 {
 using ipc_msg_t = ipc_message::u_ipc_msg_ptr;
 //-------------------------------------------------------------
+struct request_t
+{
+  std::string user;
+  std::string text;
+  std::string media;
+};
+//----------------------------------------------------------------
+node_obj_t req_to_node_obj(request_t req, node_env_t& env)
+{
+  node_obj_t obj = node_obj_t::New(env);
+  obj.Set("user", req.user);
+  obj.Set("text", req.text);
+  obj.Set("urls", req.media);
+  return obj;
+}
+//-------------------------------------------------------------
 class request_converter
 {
 public:
-using request_t = std::vector<std::string>;
+
 //----------------------------------
   request_t receive(ipc_msg_t msg)
   {
-    request_t  req;
     const auto type = msg->type();
 
     if (type >= constants::IPC_PLATFORM_TYPE)
@@ -28,16 +45,20 @@ private:
 using msg_handler_t = std::function<void(ipc_msg_t)>;
 using dispatch_t    = std::map<uint8_t, msg_handler_t>;
 //----------------------------------
-  void on_request(ipc_msg_t msg) const
+  void on_request(ipc_msg_t msg)
   {
-    kiq::platform_request* request = static_cast<platform_request*>(msg.get());
-    kutils::log(request->to_string());
+    platform_message* ipc_msg = static_cast<platform_message*>(msg.get());
+    req.text  = ipc_msg->content();
+    req.user  = ipc_msg->user();
+    req.media = ipc_msg->urls();
   }
 //----------------------------------
   dispatch_t m_dispatch_table{
-    {constants::IPC_PLATFORM_TYPE,    [this](ipc_msg_t msg) {                             }},
-    {constants::IPC_PLATFORM_REQUEST, [this](ipc_msg_t msg) { on_request(std::move(msg)); }},
+    {constants::IPC_KIQ_MESSAGE,   [this](ipc_msg_t msg) {                             }},
+    {constants::IPC_PLATFORM_TYPE, [this](ipc_msg_t msg) { on_request(std::move(msg)); }},
   };
+
+  request_t req;
 };
 //-------------------------------------------------------------
 class server
@@ -69,7 +90,7 @@ public:
   {
     ipc_msg_t msg = std::move(m_msgs.front());
     m_msgs.pop_front();
-    return std::move(msg);
+    return msg;
   }
 //----------------------------------
   bool has_msgs() const
@@ -91,7 +112,7 @@ private:
 
     zmq::message_t identity;
 
-    if (!socket.recv(&identity) || identity.empty())
+    if (!socket.recv(identity) || identity.empty())
     {
       log("Socket failed to receive");
       return;
@@ -103,9 +124,8 @@ private:
 
   while (more_flag)
     {
-      socket.recv(&msg, static_cast<int>(zmq::recv_flags::none));
-      size_t size = sizeof(more_flag);
-      socket.getsockopt(ZMQ_RCVMORE, &more_flag, &size);
+      socket.recv(msg);
+      more_flag = socket.get(zmq::sockopt::rcvmore);
       buffer.push_back(std::vector<unsigned char>{static_cast<char*>(msg.data()), static_cast<char*>(msg.data()) + msg.size()});
     }
 
