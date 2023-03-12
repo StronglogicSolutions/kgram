@@ -4,6 +4,9 @@
   "description": "NodeJS IGram lib with C++ integration",
   "main": "index.js",
   "license": "MIT",
+  "scripts": {
+    "build": "tsc -p ./"
+  },
   "dependencies": {
     "bindings": "^1.5.0",
     "instagram-private-api": "^1.45.3",
