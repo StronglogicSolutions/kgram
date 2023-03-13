@@ -1,37 +1,19 @@
 import bindings from 'bindings'
-import { GetURLS } from './util'
+import { IGClient } from "./igclient"
 import type { request } from './util'
 
 const GetMessage = bindings('kgramIPC')
+const client     = new IGClient()
+
 //----------------------------------
-class IGClient
+setInterval(() => GetMessage((msg: request | string) =>
 {
-  constructor()
+  if (typeof msg !== 'string')
   {
-    this.name = "Instagram Client"
+    if (client.post(msg))
+      console.log('Successfully posted')
+    else
+      console.error('Failed to post')
   }
-
-  public init()                                        : boolean { return true }
-  public info()                                        : boolean { return true }
-  public getName()                                     : string  { return this.name }
-  public post(text : string, media : Array<string>)    : boolean { return true }
-
-  private name: string;
-
-}
-//----------------------------------
-function run()
-{
-  const client = new IGClient()
-  setInterval(() => GetMessage((msg: request | string) =>
-  {
-    if (typeof msg !== 'string')
-    {
-      msg.media = GetURLS(msg.urls)
-      client.post(msg.text, msg.media)
-    }
-    console.log(msg)
-  }), 300)
-}
-
-run()
+  console.log(msg)
+}), 300)

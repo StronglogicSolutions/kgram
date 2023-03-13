@@ -9,8 +9,10 @@
   },
   "dependencies": {
     "bindings": "^1.5.0",
+    "fs": "^0.0.1-security",
     "instagram-private-api": "^1.45.3",
-    "node-addon-api": "^6.0.0"
+    "node-addon-api": "^6.0.0",
+    "path": "^0.12.7"
   },
   "devDependencies": {
     "ts-node": "^10.9.1",
