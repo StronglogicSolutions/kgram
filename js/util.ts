@@ -3,7 +3,7 @@ import path from 'path'
 import type { AccountRepositoryLoginResponseLogged_in_user } from 'instagram-private-api/dist/responses'
 
 type IGUser = AccountRepositoryLoginResponseLogged_in_user
-
+//---------------------------------
 export function GetURLS(s: string)
 {
   return s.split('>')
@@ -25,6 +25,7 @@ export interface credentials_interface
   pass: string
   validate(): boolean
 }
+//---------------------------------
 export class credentials implements credentials_interface
 {
   constructor()
@@ -32,12 +33,12 @@ export class credentials implements credentials_interface
     this.name = ""
     this.pass = ""
   }
-
+  //---------------------------------
   public validate() : boolean
   {
     return (this.name.length > 0 && this.pass.length > 0)
   }
-
+  //---------------------------------
   public name : string
   public pass : string
 }
