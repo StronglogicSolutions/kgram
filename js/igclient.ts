@@ -1,6 +1,8 @@
 import type { usermap, request } from './util'
 import { GetURLS, GetCredentials, credentials } from './util'
 import { IgApiClient } from 'instagram-private-api';
+import logger from './logger'
+
 //----------------------------------
 function s_login(...args: any) : boolean { return true; }
 function s_post (...args: any) : boolean { return true; }
@@ -24,8 +26,9 @@ export class IGClient
   //------------------
   public info() : void
   {
-    console.log(`Selected user  ===> "${this.user}`)
-    console.log('Current IG users => ', this.igusers)
+    logger.info(`Selected user  ===> "${this.user}"`)
+    logger.info('Current IG users:')
+    console.log(this.igusers)
   }
   //------------------
   public getname() : string
@@ -37,7 +40,7 @@ export class IGClient
   {
     const creds = GetCredentials(user)
     if (!creds.validate())
-      console.error('Failed to get credentials')
+      logger.error('Failed to get credentials')
 
     this.user = creds.name;
     this.pass = creds.pass
