@@ -12,7 +12,9 @@
     "fs": "^0.0.1-security",
     "instagram-private-api": "^1.45.3",
     "node-addon-api": "^6.0.0",
-    "path": "^0.12.7"
+    "path": "^0.12.7",
+    "pino": "^8.11.0",
+    "pino-pretty": "^10.0.0"
   },
   "devDependencies": {
     "ts-node": "^10.9.1",

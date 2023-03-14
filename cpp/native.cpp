@@ -18,6 +18,7 @@ void callback(const node_inf_t& info)
 //----------------------------------------------------------------
 node_obj_t Init(node_env_t env, node_obj_t exports)
 {
+  kutils::log("Initializing native callback");
   return node_fnc_t::New(env, callback);
 }
 //----------------------------------------------------------------

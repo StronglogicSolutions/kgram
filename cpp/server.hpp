@@ -72,6 +72,7 @@ public:
     socket_.set(zmq::sockopt::routing_id, "kgram_daemon");
     socket_.bind(RX_ADDR);
     future_ = std::async(std::launch::async, [this] { run(); });
+    kutils::log("Server listening on ", RX_ADDR.c_str());
   }
 //----------------------------------
   ~server()
@@ -124,8 +125,8 @@ private:
       more_flag = socket_.get(zmq::sockopt::rcvmore);
       buffer.push_back({static_cast<char*>(msg.data()), static_cast<char*>(msg.data()) + msg.size()});
     }
-
     msgs_.push_back(DeserializeIPCMessage(std::move(buffer)));
+    kutils::log("IPC message received");
   }
 //----------------------------------
   zmq::context_t             context_;
