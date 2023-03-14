@@ -6,14 +6,19 @@ const GetMessage = bindings('kgramIPC')
 const client     = new IGClient()
 
 //----------------------------------
-setInterval(() => GetMessage((msg: request | string) =>
+setInterval(() => GetMessage(async (msg: request) =>
 {
-  if (typeof msg !== 'string')
+  console.log('Waiting for requests')
+  try
   {
-    if (client.post(msg))
+    console.log('Received: ', msg)
+    if (await client.post(msg))
       console.log('Successfully posted')
     else
       console.error('Failed to post')
   }
-  console.log(msg)
+  catch(e)
+  {
+    console.error('Exception caught handling IPC request: ', e)
+  }
 }), 300)

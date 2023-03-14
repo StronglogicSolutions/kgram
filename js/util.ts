@@ -50,8 +50,7 @@ export function GetCredentials(user: string) : credentials
 
   if (fs.existsSync(configPath))
   {
-    const config = require(configPath)
-    console.log(config)
+    const config    = require(configPath)
     const usercreds = config[user]
     if (usercreds)
     {
@@ -61,7 +60,7 @@ export function GetCredentials(user: string) : credentials
     }
   }
   else
-    console.log('path didn\'t exist')
+    console.error('path didn\'t exist')
 
     return creds
 }

@@ -65,43 +65,43 @@ class server
 {
 public:
   server()
-  : context{1},
-    socket(context, ZMQ_ROUTER)
+  : context_{1},
+    socket_(context_, ZMQ_ROUTER)
   {
-    socket.set(zmq::sockopt::linger, 0);
-    socket.set(zmq::sockopt::routing_id, "kgram_daemon");
-    socket.bind(RX_ADDR);
-    future = std::async(std::launch::async, [this] { run(); });
+    socket_.set(zmq::sockopt::linger, 0);
+    socket_.set(zmq::sockopt::routing_id, "kgram_daemon");
+    socket_.bind(RX_ADDR);
+    future_ = std::async(std::launch::async, [this] { run(); });
   }
 //----------------------------------
   ~server()
   {
-    active = false;
-    if (future.valid())
-      future.wait();
+    active_ = false;
+    if (future_.valid())
+      future_.wait();
   }
 //----------------------------------
   bool is_active() const
   {
-    return active;
+    return active_;
   }
 //----------------------------------
   ipc_msg_t get_msg()
   {
-    ipc_msg_t msg = std::move(m_msgs.front());
-    m_msgs.pop_front();
+    ipc_msg_t msg = std::move(msgs_.front());
+    msgs_.pop_front();
     return msg;
   }
 //----------------------------------
   bool has_msgs() const
   {
-    return !m_msgs.empty();
+    return !msgs_.empty();
   }
 
 private:
   void run()
   {
-    while (active)
+    while (active_)
       recv();
   }
 //----------------------------------
@@ -112,30 +112,26 @@ private:
 
     zmq::message_t identity;
 
-    if (!socket.recv(identity) || identity.empty())
-    {
-      log("Socket failed to receive");
-      return;
-    }
+    if (!socket_.recv(identity) || identity.empty())
+      return log("Socket failed to receive");
 
     buffers_t      buffer;
     zmq::message_t msg;
     int            more_flag{1};
 
-  while (more_flag)
+    while (more_flag && socket_.recv(msg))
     {
-      socket.recv(msg);
-      more_flag = socket.get(zmq::sockopt::rcvmore);
-      buffer.push_back(std::vector<unsigned char>{static_cast<char*>(msg.data()), static_cast<char*>(msg.data()) + msg.size()});
+      more_flag = socket_.get(zmq::sockopt::rcvmore);
+      buffer.push_back({static_cast<char*>(msg.data()), static_cast<char*>(msg.data()) + msg.size()});
     }
 
-    m_msgs.push_back(DeserializeIPCMessage(std::move(buffer)));
+    msgs_.push_back(DeserializeIPCMessage(std::move(buffer)));
   }
 //----------------------------------
-  zmq::context_t              context;
-  zmq::socket_t               socket;
-  std::future<void>           future;
-  bool                        active{true};
-  std::deque<kiq::ipc_msg_t> m_msgs;
+  zmq::context_t             context_;
+  zmq::socket_t              socket_;
+  std::future<void>          future_;
+  bool                       active_{true};
+  std::deque<kiq::ipc_msg_t> msgs_;
 };
 }
