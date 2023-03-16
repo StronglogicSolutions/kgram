@@ -1,5 +1,5 @@
 import type { usermap, request } from './util'
-import { GetURLS, GetCredentials, credentials } from './util'
+import { GetURLS, GetCredentials, GetMapString } from './util'
 import { IgApiClient } from 'instagram-private-api';
 import logger from './logger'
 
@@ -28,7 +28,7 @@ export class IGClient
   {
     logger.info(`Selected user  ===> "${this.user}"`)
     logger.info('Current IG users:')
-    console.log(this.igusers)
+    logger.info(GetMapString(this.igusers))
   }
   //------------------
   public getname() : string

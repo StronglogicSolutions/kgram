@@ -1,5 +1,6 @@
 import fs from 'fs'
 import path from 'path'
+import logger from './logger'
 import type { AccountRepositoryLoginResponseLogged_in_user } from 'instagram-private-api/dist/responses'
 
 type IGUser = AccountRepositoryLoginResponseLogged_in_user
@@ -18,6 +19,20 @@ export interface request
 }
 //---------------------------------
 export type usermap = Map<string, IGUser | boolean>
+//---------------------------------
+export function GetMapString(map : usermap) : string
+{
+  let delim = ''
+  let s = (map) ? `Map(${map.size}) {` : 'invalid map'
+  for (let [key, value] of map)
+  {
+    s += `${delim} '${key}' => '${value}'`
+    delim = ','
+  }
+  if (map)
+    s += ' }'
+  return s
+}
 //-------------------------------
 export interface credentials_interface
 {
@@ -54,13 +69,13 @@ export function GetCredentials(user: string) : credentials
     const usercreds = config[user]
     if (usercreds)
     {
-      console.log('Credentials found')
+      logger.info('Credentials found')
       creds.name = usercreds.name
       creds.pass = usercreds.pass
     }
   }
   else
-    console.error('path didn\'t exist')
+    logger.error.error({"Path doesn't exist": configPath})
 
     return creds
 }
