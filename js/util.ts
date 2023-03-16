@@ -1,5 +1,7 @@
 import fs from 'fs'
 import path from 'path'
+const { Readable } = require('stream');
+const { finished } = require('stream/promises');
 import logger from './logger'
 import type { AccountRepositoryLoginResponseLogged_in_user } from 'instagram-private-api/dist/responses'
 
@@ -78,4 +80,21 @@ export function GetCredentials(user: string) : credentials
     logger.error.error({"Path doesn't exist": configPath})
 
     return creds
+}
+//---------------------------------
+export async function FetchFile(url : string)
+{
+  if (url)
+  {
+    const ext      = url.substring(url.lastIndexOf('.'))
+    const path     = 'temp' + ext
+    const response = await fetch(url)
+    if (response.ok)
+    {
+      await finished(Readable.fromWeb(response.body).pipe(fs.createWriteStream(path)));
+      return path
+    }
+    logger.error("Fetch error")
+  }
+  return ""
 }
