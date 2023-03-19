@@ -102,12 +102,12 @@ export async function FetchFile(url : string) : Promise<string>
   if (url)
   {
     const ext      = url.substring(url.lastIndexOf('.'))
-    const path     = 'temp' + ext
+    const dl_path  = path.resolve(__dirname, 'temp' + ext)
     const response = await fetch(url)
     if (response.ok)
     {
-      await finished(Readable.fromWeb(response.body).pipe(fs.createWriteStream(path)));
-      return path
+      await finished(Readable.fromWeb(response.body).pipe(fs.createWriteStream(dl_path)));
+      return dl_path
     }
     logger.error("Fetch error")
   }
@@ -159,13 +159,13 @@ export function IsVideo(mime : string) : boolean
   return mime.includes('video')
 }
 //----------------------------------
-export async function ReadFile(path : string) : Promise<Buffer>
+export async function ReadFile(filepath : string) : Promise<Buffer>
 {
   let resolver
   let p1 = new Promise(resolve => resolver = resolve)
   let p2 = new Promise(resolve => setTimeout(() => { }, 8000))
   let buffer : Buffer = undefined
-  await fs.readFile('temp/Formatted.mp4', (err, data) => {
+  await fs.readFile(filepath, (err, data) => {
     if (err)
       logger.error('Failed to read file')
     else

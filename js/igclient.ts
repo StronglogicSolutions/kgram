@@ -1,5 +1,5 @@
 import { usermap, request, FormatVideo } from './util'
-import { GetURLS, GetCredentials, GetMapString, GetMime, IsVideo, ReadFile} from './util'
+import { GetURLS, GetCredentials, GetMapString, GetMime, IsVideo, FetchFile, ReadFile} from './util'
 import { IgApiClient } from 'instagram-private-api';
 import logger from './logger'
 
@@ -75,6 +75,18 @@ export class IGClient
         return await this.post_video(urls[i], req.text)
       else
       {
+        if (urls)
+        {
+          const temp = await FetchFile(urls[0])
+          logger.info({"Received temp file: ": temp})
+          if (temp)
+          {
+            const file = await ReadFile(temp)
+            if (file)
+              return s_post(file, req.text)
+          }
+        }
+        console.log(urls[0]);
         const file = await ReadFile(urls[0])
         if (file)
           return s_post(file, req.text)
