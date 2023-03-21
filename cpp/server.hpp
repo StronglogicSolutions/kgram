@@ -70,6 +70,9 @@ public:
   {
     socket_.set(zmq::sockopt::linger, 0);
     socket_.set(zmq::sockopt::routing_id, "kgram_daemon");
+    socket_.set(zmq::sockopt::tcp_keepalive, 1);
+    socket_.set(zmq::sockopt::tcp_keepalive_idle,  300);
+    socket_.set(zmq::sockopt::tcp_keepalive_intvl, 300);
     socket_.bind(RX_ADDR);
     future_ = std::async(std::launch::async, [this] { run(); });
     kutils::log("Server listening on ", RX_ADDR.c_str());
