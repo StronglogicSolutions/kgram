@@ -22,9 +22,9 @@ const validateAspectRatio = (ratio : vcoord) =>
           (ratio.x == 1 && ratio.y == 1))    // 1:1
 }
 //---------------------------------
-export function GetURLS(s: string)
+export function GetURLS(s: string) : Array<string>
 {
-  return s.split('>')
+  return (s.length > 0) ? s.split('>') : []
 }
 //---------------------------------
 export interface request
