@@ -2,6 +2,7 @@ import { usermap, request, FormatVideo } from './util'
 import { GetURLS, GetCredentials, GetMapString, GetMime, IsVideo, FetchFile, ReadFile} from './util'
 import { IgApiClient } from 'instagram-private-api';
 import logger from './logger'
+import { P } from 'pino';
 
 //----------------------------------
 function s_login(...args: any) : boolean { return true; }
@@ -36,7 +37,7 @@ export class IGClient
     return this.name
   }
   //------------------
-  public async set(user: string) : Promise<void>
+  public async set_user(user: string) : Promise<void>
   {
     const creds = GetCredentials(user)
     if (!creds.validate())
@@ -51,18 +52,18 @@ export class IGClient
   //------------------
   public async post(req : request) : Promise<boolean>
   {
-    this.set(req.user)
+    this.set_user(req.user)
 
     if (!this.user || !this.pass)
       throw Error("Credentials not set")
     if (!this.igusers.has(this.user))
-        this.igusers.set(this.user, s_login(this.user, this.pass))
-        // await this.ig.account.login(this.user, this.pass));
+        this.igusers.set(this.user, s_login(this.user, this.pass)) // await this.ig.account.login(this.user, this.pass));
+
     if (this.igusers.has(this.user))
     {
-      const urls = GetURLS(req.urls)
-      let isVideo : boolean = false
-      let i : number = 0
+      const urls  : Array<string> = GetURLS(req.urls)
+      let isVideo : boolean       = false
+      let i       : number        = 0
       for (; i < urls.length; i++)
       {
         if (IsVideo(GetMime(urls[i])))
@@ -72,39 +73,31 @@ export class IGClient
         }
       }
       if (isVideo)
-        return await this.post_video(urls[i], req.text)
+        return await this.do_post(req.text, urls[i], true)
       else
-      {
-        if (urls)
-        {
-          const temp = await FetchFile(urls[0])
-          logger.info({"Received temp file: ": temp})
-          if (temp)
-          {
-            const file = await ReadFile(temp)
-            if (file)
-              return s_post(file, req.text)
-          }
-        }
-        console.log(urls[0]);
-        const file = await ReadFile(urls[0])
-        if (file)
-          return s_post(file, req.text)
-          // return (await this.ig.publish.photo({file, caption: req.text}) != undefined)
-      }
+        return await this.do_post(req.text, await FetchFile(urls[0]), false)
     }
     return false
   }
   //------------------
-  private async post_video(videoPath : string, caption : string) : Promise<boolean>
+  private async do_post(caption : string, file_path : string, is_video : boolean) : Promise<boolean>
   {
-    if (FormatVideo(videoPath))
+    if (is_video && FormatVideo(file_path))
     {
-      const video      = await ReadFile('temp/Formatted.mp4')
-      const coverImage = await ReadFile('temp/preview.jpg')
-      if (video && coverImage)
-        return s_post(video, coverImage, caption)
-        // return (await this.ig.publish.video({video, coverImage, caption: req.text}) != undefined)
+      logger.info({Posting: {Video: file_path, Text: caption}})
+      const video   = await ReadFile('temp/Formatted.mp4')
+      const preview = await ReadFile('temp/preview.jpg')
+      if (video && preview)
+        return s_post(video, preview, caption) // return (await this.ig.publish.video({video, coverImage, caption}) != undefined)
+    }
+    else
+    {
+      logger.info({"Received temp file: ": file_path})
+      const file = await ReadFile(file_path)
+      if (file)
+        return s_post(file, caption) // return (await this.ig.publish.video({file, caption}) != undefined)
+      else
+        logger.error({"Post Failed": "No media"})
     }
     return false
   }
