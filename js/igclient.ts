@@ -1,14 +1,7 @@
-import { usermap, request, FormatVideo } from './util'
-import { GetURLS, GetCredentials, GetMapString, GetMime, IsVideo, FetchFile, ReadFile} from './util'
-import { IgApiClient } from 'instagram-private-api';
 import logger from './logger'
-import { P } from 'pino';
-
-//----------------------------------
-function s_login(...args: any) : boolean { return true; }
-function s_post (...args: any) : boolean { return true; }
-function s_gend (...args: any) : boolean { return true; }
-function s_prel (...args: any) : boolean { return true; }
+import { IgApiClient } from 'instagram-private-api';
+import { GetURLS, GetCredentials, GetMapString, GetMime, IsVideo,
+         FetchFile, ReadFile, usermap, request, FormatVideo, FormatImage} from './util'
 //----------------------------------
 export class IGClient
 {
@@ -45,9 +38,8 @@ export class IGClient
 
     this.user = creds.name;
     this.pass = creds.pass
-    s_gend()                     //this.ig.state.generateDevice(this.user)
-    s_prel()                     //await this.ig.simulate.preLoginFlow()
-    this.info()
+    this.ig.state.generateDevice(this.user)
+    await this.ig.simulate.preLoginFlow()
   }
   //------------------
   public async post(req : request) : Promise<boolean>
@@ -57,7 +49,14 @@ export class IGClient
     if (!this.user || !this.pass)
       throw Error("Credentials not set")
     if (!this.igusers.has(this.user))
-        this.igusers.set(this.user, s_login(this.user, this.pass)) // await this.ig.account.login(this.user, this.pass));
+    {
+      const account = await this.ig.account.login(this.user, this.pass)
+      logger.info({account})
+      if (account)
+        this.igusers.set(this.user, account)
+    }
+    else
+      throw Error("Login failed")
 
     if (this.igusers.has(this.user))
     {
@@ -77,35 +76,42 @@ export class IGClient
       else
         return await this.do_post(req.text, await FetchFile(urls[0]), false)
     }
+
     return false
   }
   //------------------
   private async do_post(caption : string, file_path : string, is_video : boolean) : Promise<boolean>
   {
-    if (is_video && FormatVideo(file_path))
-    {
-      logger.info({Posting: {Video: file_path, Text: caption}})
-      const video   = await ReadFile('temp/Formatted.mp4')
-      const preview = await ReadFile('temp/preview.jpg')
-      if (video && preview)
-        return s_post(video, preview, caption) // return (await this.ig.publish.video({video, coverImage, caption}) != undefined)
-    }
+    if (is_video)
+      return (await FormatVideo(file_path) && await this.post_image(caption, file_path))
     else
-    {
-      logger.info({"Received temp file: ": file_path})
-      const file = await ReadFile(file_path)
-      if (file)
-        return s_post(file, caption) // return (await this.ig.publish.video({file, caption}) != undefined)
-      else
-        logger.error({"Post Failed": "No media"})
-    }
+      return await this.post_image(caption, file_path)
+    return false
+  }
+  //------------------
+  private async post_video(caption : string, file_path : string) : Promise<boolean>
+  {
+    logger.info({Posting: { Video: file_path, Text: caption }})
+    const video   = await ReadFile('temp/Formatted.mp4')
+    const preview = await ReadFile('temp/preview.jpg')
+    return (video && preview &&
+            (await this.ig.publish.video({video, coverImage: preview, caption}) != undefined))
+  }
+  //------------------
+  private async post_image(caption : string, file_path : string) : Promise<boolean>
+  {
+    logger.info({"Received temp file: ": file_path})
+    const image_path = await FormatImage(file_path)
+    const file       = await ReadFile(image_path)
+    if (file)
+      return (await this.ig.publish.photo({file, caption}) != undefined)
+    logger.error({"Post Failed": "No media"})
     return false
   }
 
-  private name    : string;
-  private user    : string;
-  private pass    : string;
-  private ig      : IgApiClient;
-  private igusers : usermap;
-
+  private name    : string
+  private user    : string
+  private pass    : string
+  private ig      : IgApiClient
+  private igusers : usermap
 }

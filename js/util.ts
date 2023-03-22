@@ -1,11 +1,15 @@
 import fs from 'fs'
-import path from 'path'
+import path, { resolve } from 'path'
 const { Readable } = require('stream');
 const { finished } = require('stream/promises');
 import logger from './logger'
 import type { AccountRepositoryLoginResponseLogged_in_user } from 'instagram-private-api/dist/responses'
 import ffmpeg from 'ffmpeg'
 import mime from 'mime/lite'
+import gm from 'gm'
+
+gm.subClass({ imageMagick: true })
+
 
 type IGUser = AccountRepositoryLoginResponseLogged_in_user
 //---------------------------------
@@ -174,4 +178,61 @@ export async function ReadFile(filepath : string) : Promise<Buffer>
   })
   await Promise.race([p1, p2])
   return buffer
+}
+//----------------------------------
+//---------------------------------
+export async function FormatImage(file : string) : Promise<string>
+{
+
+  let mime_data = GetMime(file)
+  if (mime_data.includes('png'))
+  {
+    let r = undefined
+    const p = new Promise(resolve => r = resolve)
+    const path = file.substring(0, file.lastIndexOf('/') + 1) + 'temp.jpg'
+    gm(file).write(path, (err) =>
+    {
+      if (err)
+        logger.error("Error converting png to jpg")
+      else
+      {
+        logger.info("Converted png to jpg")
+        file = path
+      }
+      r()
+    })
+    await Promise.all([p])
+  }
+  return file
+  // const filePath = path.resolve(__dirname, file)
+  // console.log(filePath)
+  // if (!fs.existsSync(filePath))
+  //   throw new Error("File path doesn't exist!!!")
+
+  // const video = await new ffmpeg(filePath)
+  // if (video)
+  // {
+  //   if (!validateAspectRatio(video.metadata.video.aspect))
+  //     video.setVideoSize('1080x1350', true, true, '#fff')
+  //   else
+  //     video.setVideoSize('1080x?', true, true)
+
+  //   if (makePreview)
+  //     video.fnExtractFrameToJPG(path.resolve(__dirname, '..'),
+  //     { frame_rate : 1,
+  //       number     : 1,
+  //       file_name  : 'preview.jpg' })
+
+  //   video.save(path.resolve(__dirname, '..', 'formatted.mp4'), (err, file) =>
+  //   {
+  //     if (err)
+  //       logger.error(err)
+  //     else
+  //     {
+  //       logger.info({'file created': file})
+  //       return true
+  //     }
+  //   })
+  // }
+  // return false
 }
