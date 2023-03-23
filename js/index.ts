@@ -10,7 +10,7 @@ setInterval(() => GetMessage(async (msg: request) =>
   logger.info('Waiting for requests')
   try
   {
-    logger.debug({'Received: ': msg})
+    logger.debug({ received: msg })
     if (await client.post(msg))
       logger.info('Successfully posted')
     else
@@ -18,6 +18,6 @@ setInterval(() => GetMessage(async (msg: request) =>
   }
   catch(e)
   {
-    logger.error({'Exception caught handling IPC request: ': e})
+    logger.error({ exception: e })
   }
 }), 300)
