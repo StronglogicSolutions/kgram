@@ -71,16 +71,19 @@ public:
     tx_(context_, ZMQ_DEALER)
   {
     rx_.set(zmq::sockopt::linger, 0);
+    tx_.set(zmq::sockopt::linger, 0);
     rx_.set(zmq::sockopt::routing_id, "kgram_daemon");
-    rx_.set(zmq::sockopt::tcp_keepalive, 1);
-    rx_.set(zmq::sockopt::tcp_keepalive_idle,  300);
-    rx_.set(zmq::sockopt::tcp_keepalive_intvl, 300);
     tx_.set(zmq::sockopt::routing_id, "kgram_daemon_tx");
+    rx_.set(zmq::sockopt::tcp_keepalive, 1);
     tx_.set(zmq::sockopt::tcp_keepalive, 1);
+    rx_.set(zmq::sockopt::tcp_keepalive_idle,  300);
     tx_.set(zmq::sockopt::tcp_keepalive_idle,  300);
+    rx_.set(zmq::sockopt::tcp_keepalive_intvl, 300);
     tx_.set(zmq::sockopt::tcp_keepalive_intvl, 300);
+
     rx_.bind   (RX_ADDR);
     tx_.connect(TX_ADDR);
+
     future_ = std::async(std::launch::async, [this] { run(); });
     kutils::log("Server listening on ", RX_ADDR.c_str());
   }
@@ -109,34 +112,37 @@ public:
     return !msgs_.empty();
   }
 //----------------------------------
-void reply(bool success = true)
-{
-  if (!wait_to_reply_)
+  void reply(bool success = true)
   {
-    kutils::log("Received reply value, but not currently waiting to reply. Ignoring");
-    return;
+    if (!replies_pending_)
+    {
+      kutils::log("Received reply value, but not currently waiting to reply. Ignoring");
+      return;
+    }
+
+    kiq::ipc_msg_t msg;
+      if (success)
+        msg = std::make_unique<kiq::okay_message>();
+      else
+        msg = std::make_unique<kiq::fail_message>();
+
+    const auto&  payload   = msg->data();
+    const size_t frame_num = payload.size();
+
+    for (int i = 0; i < frame_num; i++)
+    {
+      auto flag = i == (frame_num - 1) ? zmq::send_flags::none : zmq::send_flags::sndmore;
+      auto data = payload.at(i);
+
+      zmq::message_t message{data.size()};
+      std::memcpy(message.data(), data.data(), data.size());
+
+      tx_.send(message, flag);
+    }
+
+    kutils::log("Sent reply of ", constants::IPC_MESSAGE_NAMES.at(msg->type()));
+    replies_pending_--;
   }
-
-  kiq::ipc_msg_t msg;
-    if (success)
-      msg = std::make_unique<kiq::okay_message>();
-    else
-      msg = std::make_unique<kiq::fail_message>();
-
-  const auto&  payload   = msg->data();
-  const size_t frame_num = payload.size();
-
-  for (int i = 0; i < frame_num; i++)
-  {
-    auto flag = i == (frame_num - 1) ? zmq::send_flags::none : zmq::send_flags::sndmore;
-    auto data = payload.at(i);
-
-    zmq::message_t message{data.size()};
-    std::memcpy(message.data(), data.data(), data.size());
-
-    tx_.send(message, flag);
-  }
-}
 
 private:
   void run()
@@ -166,7 +172,7 @@ private:
     }
     msgs_.push_back(DeserializeIPCMessage(std::move(buffer)));
     kutils::log("IPC message received");
-    wait_to_reply_ = true;
+    replies_pending_++;
   }
 //----------------------------------
   zmq::context_t             context_;
@@ -174,7 +180,7 @@ private:
   zmq::socket_t              tx_;
   std::future<void>          future_;
   bool                       active_{true};
-  bool                       wait_to_reply_{false};
+  uint32_t                   replies_pending_{0};
   std::deque<kiq::ipc_msg_t> msgs_;
 };
 }
