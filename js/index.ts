@@ -2,22 +2,26 @@ import bindings from 'bindings'
 import { IGClient } from "./igclient"
 import type { request } from './util'
 import logger from './logger'
-const GetMessage = bindings('kgramIPC')
+const { poll, OnResult } = bindings('kgramIPC')
 const client     = new IGClient()
 //----------------------------------
-setInterval(() => GetMessage(async (msg: request) =>
+setInterval(() => poll(async (msg: request) =>
 {
   logger.info('Waiting for requests')
   try
   {
-    logger.debug({'Received: ': msg})
-    if (await client.post(msg))
+    logger.debug({ received: msg })
+
+    const result = await client.post(msg)
+    if (result)
       logger.info('Successfully posted')
     else
       logger.error('Failed to post')
+
+    OnResult(result);
   }
   catch(e)
   {
-    logger.error({'Exception caught handling IPC request: ': e})
+    logger.error({ exception: e })
   }
 }), 300)
