@@ -7,21 +7,22 @@ const client     = new IGClient()
 //----------------------------------
 setInterval(() => poll(async (msg: request) =>
 {
+  let result = false
   logger.info('Waiting for requests')
   try
   {
     logger.debug({ received: msg })
 
-    const result = await client.post(msg)
+    result = await client.post(msg)
     if (result)
       logger.info('Successfully posted')
     else
       logger.error('Failed to post')
 
-    OnResult(result);
   }
   catch(e)
   {
     logger.error({ exception: e })
   }
+  OnResult(result);
 }), 300)
