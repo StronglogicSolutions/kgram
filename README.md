@@ -1,4 +1,3 @@
 # kgram
-Instagram request with C++ integration
-
-## In progress (stubbed functionality until further notice)
+Instagram Client in TypeScript with NodeJS C++ bindings.
+Makes use of the kproto IPC protocol to receive and respond to requests from the kbot broker
