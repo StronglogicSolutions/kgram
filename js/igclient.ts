@@ -38,8 +38,27 @@ export class IGClient
 
     this.user = creds.name;
     this.pass = creds.pass
+  }
+  //------------------
+  private async login() : Promise<boolean>
+  {
     this.ig.state.generateDevice(this.user)
     await this.ig.simulate.preLoginFlow()
+    try
+    {
+      const account = await this.ig.account.login(this.user, this.pass)
+      logger.info({account})
+      if (account)
+      {
+        this.igusers.set(this.user, account)
+        return true
+      }
+    }
+    catch (e)
+    {
+      logger.error({ Exception: e })
+    }
+    return false
   }
   //------------------
   public async post(req : request) : Promise<boolean>
@@ -48,15 +67,9 @@ export class IGClient
 
     if (!this.user || !this.pass)
       throw Error("Credentials not set")
+
     if (!this.igusers.has(this.user))
-    {
-      const account = await this.ig.account.login(this.user, this.pass)
-      logger.info({account})
-      if (account)
-        this.igusers.set(this.user, account)
-    }
-    else
-      throw Error("Login failed")
+      await this.login()
 
     if (this.igusers.has(this.user))
     {
@@ -76,17 +89,15 @@ export class IGClient
       else
         return await this.do_post(req.text, await FetchFile(urls[0]), false)
     }
-
-    return false
+    throw Error("Post failed. Did not login")
   }
   //------------------
   private async do_post(caption : string, file_path : string, is_video : boolean) : Promise<boolean>
   {
     if (is_video)
-      return (await FormatVideo(file_path) && await this.post_image(caption, file_path))
+      return (await FormatVideo(file_path) && await this.post_video(caption, file_path))
     else
       return await this.post_image(caption, file_path)
-    return false
   }
   //------------------
   private async post_video(caption : string, file_path : string) : Promise<boolean>
