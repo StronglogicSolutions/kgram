@@ -183,8 +183,7 @@ export async function ReadFile(filepath : string) : Promise<Buffer>
 //---------------------------------
 export async function FormatImage(file : string) : Promise<string>
 {
-
-  let mime_data = GetMime(file)
+  const mime_data = GetMime(file)
   if (mime_data.includes('png'))
   {
     let r = undefined
@@ -204,35 +203,4 @@ export async function FormatImage(file : string) : Promise<string>
     await Promise.all([p])
   }
   return file
-  // const filePath = path.resolve(__dirname, file)
-  // console.log(filePath)
-  // if (!fs.existsSync(filePath))
-  //   throw new Error("File path doesn't exist!!!")
-
-  // const video = await new ffmpeg(filePath)
-  // if (video)
-  // {
-  //   if (!validateAspectRatio(video.metadata.video.aspect))
-  //     video.setVideoSize('1080x1350', true, true, '#fff')
-  //   else
-  //     video.setVideoSize('1080x?', true, true)
-
-  //   if (makePreview)
-  //     video.fnExtractFrameToJPG(path.resolve(__dirname, '..'),
-  //     { frame_rate : 1,
-  //       number     : 1,
-  //       file_name  : 'preview.jpg' })
-
-  //   video.save(path.resolve(__dirname, '..', 'formatted.mp4'), (err, file) =>
-  //   {
-  //     if (err)
-  //       logger.error(err)
-  //     else
-  //     {
-  //       logger.info({'file created': file})
-  //       return true
-  //     }
-  //   })
-  // }
-  // return false
 }
