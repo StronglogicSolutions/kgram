@@ -94,6 +94,9 @@ export class IGClient
   //------------------
   private async do_post(caption : string, file_path : string, is_video : boolean) : Promise<boolean>
   {
+    if (!file_path)
+      throw Error("Cannot post without media");
+
     if (is_video)
       return (await FormatVideo(file_path) && await this.post_video(caption, file_path))
     else
