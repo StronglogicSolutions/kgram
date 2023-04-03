@@ -42,6 +42,7 @@ export class IGClient
   //------------------
   private async login() : Promise<boolean>
   {
+    logger.info({ login: this.user })
     this.ig.state.generateDevice(this.user)
     await this.ig.simulate.preLoginFlow()
     try
