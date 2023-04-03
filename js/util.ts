@@ -177,6 +177,7 @@ export async function ReadFile(filepath : string) : Promise<Buffer>
     resolver()
   })
   await Promise.race([p1, p2])
+  logger.debug({ "Read file result": (buffer != undefined) })
   return buffer
 }
 //----------------------------------
