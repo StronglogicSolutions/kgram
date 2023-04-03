@@ -43,20 +43,21 @@ export class IGClient
   private async login() : Promise<boolean>
   {
     this.ig.state.generateDevice(this.user)
-    await this.ig.simulate.preLoginFlow()
     try
     {
+      await this.ig.simulate.preLoginFlow()
       const account = await this.ig.account.login(this.user, this.pass)
       logger.info({account})
       if (account)
       {
         this.igusers.set(this.user, account)
+        process.nextTick(async () => await this.ig.simulate.postLoginFlow())
         return true
       }
     }
     catch (e)
     {
-      logger.error({ Exception: e })
+      logger.error({ Error: "login", Exception: e })
     }
     return false
   }
