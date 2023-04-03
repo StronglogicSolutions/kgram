@@ -48,7 +48,7 @@ export class IGClient
     {
       await this.ig.simulate.preLoginFlow()
       const account = await this.ig.account.login(this.user, this.pass)
-      logger.info({account})
+      logger.info({ result: account })
       if (account)
       {
         this.igusers.set(this.user, account)
@@ -107,20 +107,35 @@ export class IGClient
   //------------------
   private async post_video(caption : string, file_path : string) : Promise<boolean>
   {
-    logger.info({Posting: { Video: file_path, Text: caption }})
+    logger.info({ Posting: { Video: file_path, Text: caption }})
     const video   = await ReadFile('temp/Formatted.mp4')
     const preview = await ReadFile('temp/preview.jpg')
-    return (video && preview &&
-            (await this.ig.publish.video({video, coverImage: preview, caption}) != undefined))
+    try
+    {
+      return (video && preview &&
+              (await this.ig.publish.video({video, coverImage: preview, caption}) != undefined))
+    }
+    catch (e)
+    {
+      logger.error({ Error: "post_video", Exception: e })
+      throw e
+    }
   }
   //------------------
   private async post_image(caption : string, file_path : string) : Promise<boolean>
   {
-    logger.info({"Received temp file: ": file_path})
+    logger.info("Posting image")
     const image_path = await FormatImage(file_path)
-    const file       = await ReadFile(image_path)
+    const file       = await ReadFile   (image_path)
     if (file)
-      return (await this.ig.publish.photo({file, caption}) != undefined)
+      try
+      {
+        return (await this.ig.publish.photo({file, caption}) != undefined)
+      }
+      catch(e)
+      {
+        logger.error({ Error: "post_image", Exception: e })
+      }
     logger.error({"Post Failed": "No media"})
     return false
   }
