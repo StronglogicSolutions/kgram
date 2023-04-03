@@ -44,8 +44,10 @@ export class IGClient
   {
     logger.info({ login: this.user })
     this.ig.state.generateDevice(this.user)
+    logger.info("Generated device")
     try
     {
+      logger.info("Simulating prelogin flow")
       await this.ig.simulate.preLoginFlow()
       logger.info("Simulated prelogin")
       const account = await this.ig.account.login(this.user, this.pass)
