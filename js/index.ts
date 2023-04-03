@@ -15,9 +15,9 @@ setInterval(() => poll(async (msg: request) =>
 
     result = await client.post(msg)
     if (result)
-      logger.info('Successfully posted')
+      logger.info({ success: result })
     else
-      logger.error('Failed to post')
+      logger.error('Posting failed')
 
   }
   catch(e)
