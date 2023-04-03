@@ -47,12 +47,17 @@ export class IGClient
     try
     {
       await this.ig.simulate.preLoginFlow()
+      logger.info("Simulated prelogin")
       const account = await this.ig.account.login(this.user, this.pass)
       logger.info({ result: account })
       if (account)
       {
         this.igusers.set(this.user, account)
-        process.nextTick(async () => await this.ig.simulate.postLoginFlow())
+        process.nextTick(async () =>
+        {
+          await this.ig.simulate.postLoginFlow()
+          logger.info("Simulated postlogin")
+        })
         return true
       }
     }
@@ -70,8 +75,8 @@ export class IGClient
     if (!this.user || !this.pass)
       throw Error("Credentials not set")
 
-    if (!this.igusers.has(this.user))
-      await this.login()
+    if (!this.igusers.has(this.user) && !await this.login())
+      return false
 
     if (this.igusers.has(this.user))
     {
