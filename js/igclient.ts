@@ -47,19 +47,20 @@ export class IGClient
     logger.info("Generated device")
     try
     {
-      logger.info("Simulating prelogin flow")
-      await this.ig.simulate.preLoginFlow()
-      logger.info("Simulated prelogin")
+//      logger.info("Simulating prelogin flow")
+//      await this.ig.simulate.preLoginFlow()
+//      logger.info("Simulated prelogin")
       const account = await this.ig.account.login(this.user, this.pass)
       logger.info({ result: account })
       if (account)
       {
+	logger.info("Account is good!")
         this.igusers.set(this.user, account)
-        process.nextTick(async () =>
-        {
-          await this.ig.simulate.postLoginFlow()
-          logger.info("Simulated postlogin")
-        })
+//        process.nextTick(async () =>
+//        {
+//          await this.ig.simulate.postLoginFlow()
+//          logger.info("Simulated postlogin")
+//        })
         return true
       }
     }
@@ -79,33 +80,43 @@ export class IGClient
 
     if (!this.igusers.has(this.user) && !await this.login())
       return false
-
+    logger.info("login successful")
     if (this.igusers.has(this.user))
     {
+      logger.info("Getting URLS")
       const urls  : Array<string> = GetURLS(req.urls)
+      logger.info(urls)
       let isVideo : boolean       = false
       let i       : number        = 0
       for (; i < urls.length; i++)
       {
+	logger.info('iterating')
         if (IsVideo(GetMime(urls[i])))
         {
           isVideo = true
           break
         }
       }
+      logger.info('Done iterating')
       if (isVideo)
         return await this.do_post(req.text, urls[i], true)
       else
+      {
+	logger.info('Is image')
+	const url_to_use = urls[0]
+	logger.info({Image: url_to_use})
         return await this.do_post(req.text, await FetchFile(urls[0]), false)
+      }
     }
     throw Error("Post failed. Did not login")
   }
   //------------------
   private async do_post(caption : string, file_path : string, is_video : boolean) : Promise<boolean>
   {
+    logger.info({file_path})
     if (!file_path)
       throw Error("Cannot post without media");
-
+    logger.info({is_video})
     if (is_video)
       return (await FormatVideo(file_path) && await this.post_video(caption, file_path))
     else

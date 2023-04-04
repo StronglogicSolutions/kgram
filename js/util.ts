@@ -28,7 +28,7 @@ const validateAspectRatio = (ratio : vcoord) =>
 //---------------------------------
 export function GetURLS(s: string) : Array<string>
 {
-  return (s.length > 0) ? s.split('>') : []
+  return (s.length > 0) ? s.split('>').filter(u => u) : []
 }
 //---------------------------------
 export interface request
@@ -103,11 +103,16 @@ export function GetCredentials(user: string) : credentials
 //---------------------------------
 export async function FetchFile(url : string) : Promise<string>
 {
+  logger.info({Fetch: url})
   if (url)
   {
+    logger.info('url truthy')
     const ext      = url.substring(url.lastIndexOf('.'))
+    logger.info({ext})
     const dl_path  = path.resolve(__dirname, 'temp' + ext)
+    logger.info({dl_path})
     const response = await fetch(url)
+    logger.info({response})
     if (response.ok)
     {
       await finished(Readable.fromWeb(response.body).pipe(fs.createWriteStream(dl_path)));
@@ -184,7 +189,9 @@ export async function ReadFile(filepath : string) : Promise<Buffer>
 //---------------------------------
 export async function FormatImage(file : string) : Promise<string>
 {
+  logger.info({format: file})
   const mime_data = GetMime(file)
+  logger.info({mime: mime_data})
   if (mime_data.includes('png'))
   {
     let r = undefined
