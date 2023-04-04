@@ -12,6 +12,7 @@
       ],
       "libraries": ["-lzmq", "-lpthread"],
       'defines': [ 'NAPI_DISABLE_CPP_EXCEPTIONS' ],
+      "cflags_cc": ["-std=c++17"]
     }
   ]
 }
