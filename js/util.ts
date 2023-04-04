@@ -10,6 +10,8 @@ import gm from 'gm'
 
 gm.subClass({ imageMagick: true })
 
+const FetchException : string = "FetchException"
+const PathException  : string = "Path does not exist"
 
 type IGUser = AccountRepositoryLoginResponseLogged_in_user
 //---------------------------------
@@ -28,7 +30,7 @@ const validateAspectRatio = (ratio : vcoord) =>
 //---------------------------------
 export function GetURLS(s: string) : Array<string>
 {
-  return (s.length > 0) ? s.split('>') : []
+  return (s.length > 0) ? s.split('>').filter(u => u) : []
 }
 //---------------------------------
 export interface request
@@ -96,7 +98,7 @@ export function GetCredentials(user: string) : credentials
     }
   }
   else
-    logger.error.error({"Path doesn't exist": configPath})
+    logger.error({ PathException: configPath})
 
     return creds
 }
@@ -105,15 +107,22 @@ export async function FetchFile(url : string) : Promise<string>
 {
   if (url)
   {
-    const ext      = url.substring(url.lastIndexOf('.'))
-    const dl_path  = path.resolve(__dirname, 'temp' + ext)
-    const response = await fetch(url)
-    if (response.ok)
+    try
     {
-      await finished(Readable.fromWeb(response.body).pipe(fs.createWriteStream(dl_path)));
-      return dl_path
+      const ext      = url.substring(url.lastIndexOf('.'))
+      const dl_path  = path.resolve(__dirname, 'temp' + ext)
+      const response = await fetch(url)
+      if (response.ok)
+      {
+        await finished(Readable.fromWeb(response.body).pipe(fs.createWriteStream(dl_path)));
+        return dl_path
+      }
+      logger.error("Fetch error")
     }
-    logger.error("Fetch error")
+    catch (e)
+    {
+      logger.error({ FetchException: e, message: "Check version of node" })
+    }
   }
   return ""
 }
@@ -145,7 +154,7 @@ export async function FormatVideo(file : string, makePreview : boolean = true) :
         logger.error(err)
       else
       {
-        logger.info({'file created': file})
+        logger.info({ Created: file})
         return true
       }
     })
@@ -177,18 +186,16 @@ export async function ReadFile(filepath : string) : Promise<Buffer>
     resolver()
   })
   await Promise.race([p1, p2])
-  logger.debug({ "Read file result": (buffer != undefined) })
   return buffer
 }
 //----------------------------------
-//---------------------------------
 export async function FormatImage(file : string) : Promise<string>
 {
   const mime_data = GetMime(file)
   if (mime_data.includes('png'))
   {
-    let r = undefined
-    const p = new Promise(resolve => r = resolve)
+    let   r    = undefined
+    const p    = new Promise(resolve => r = resolve)
     const path = file.substring(0, file.lastIndexOf('/') + 1) + 'temp.jpg'
     gm(file).write(path, (err) =>
     {

@@ -42,19 +42,14 @@ export class IGClient
   //------------------
   private async login() : Promise<boolean>
   {
-    logger.info({ login: this.user })
     this.ig.state.generateDevice(this.user)
     try
     {
-      await this.ig.simulate.preLoginFlow()
+
       const account = await this.ig.account.login(this.user, this.pass)
-      logger.info({ result: account })
-      if (account)
-      {
-        this.igusers.set(this.user, account)
-        process.nextTick(async () => await this.ig.simulate.postLoginFlow())
+      logger.info({ username: account.username, id: account.pk })
+      if (account && this.igusers.set(this.user, account))
         return true
-      }
     }
     catch (e)
     {
@@ -70,12 +65,13 @@ export class IGClient
     if (!this.user || !this.pass)
       throw Error("Credentials not set")
 
-    if (!this.igusers.has(this.user))
-      await this.login()
+    if (!this.igusers.has(this.user) && !await this.login())
+      return false
 
     if (this.igusers.has(this.user))
     {
       const urls  : Array<string> = GetURLS(req.urls)
+      logger.info(urls)
       let isVideo : boolean       = false
       let i       : number        = 0
       for (; i < urls.length; i++)
@@ -86,19 +82,20 @@ export class IGClient
           break
         }
       }
+
       if (isVideo)
         return await this.do_post(req.text, urls[i], true)
       else
         return await this.do_post(req.text, await FetchFile(urls[0]), false)
     }
-    throw Error("Post failed. Did not login")
+    throw Error("Failed to login and set user")
   }
   //------------------
   private async do_post(caption : string, file_path : string, is_video : boolean) : Promise<boolean>
   {
     if (!file_path)
       throw Error("Cannot post without media");
-
+    logger.info({is_video})
     if (is_video)
       return (await FormatVideo(file_path) && await this.post_video(caption, file_path))
     else
@@ -107,7 +104,6 @@ export class IGClient
   //------------------
   private async post_video(caption : string, file_path : string) : Promise<boolean>
   {
-    logger.info({ Posting: { Video: file_path, Text: caption }})
     const video   = await ReadFile('temp/Formatted.mp4')
     const preview = await ReadFile('temp/preview.jpg')
     try
@@ -124,7 +120,6 @@ export class IGClient
   //------------------
   private async post_image(caption : string, file_path : string) : Promise<boolean>
   {
-    logger.info("Posting image")
     const image_path = await FormatImage(file_path)
     const file       = await ReadFile   (image_path)
     if (file)
@@ -136,7 +131,7 @@ export class IGClient
       {
         logger.error({ Error: "post_image", Exception: e })
       }
-    logger.error({"Post Failed": "No media"})
+    logger.error({ Error: "No media" })
     return false
   }
 
