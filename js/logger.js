@@ -11,4 +11,5 @@ const logger = pino({
   level: 'trace'
 })
 
-module.exports = logger
+module.exports    = logger
+module.exports.lg = module.exports.logger

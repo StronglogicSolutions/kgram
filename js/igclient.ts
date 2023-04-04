@@ -1,7 +1,10 @@
-import logger from './logger'
+import lg from './logger'
 import { IgApiClient } from 'instagram-private-api';
 import { GetURLS, GetCredentials, GetMapString, GetMime, IsVideo,
          FetchFile, ReadFile, usermap, request, FormatVideo, FormatImage} from './util'
+
+const post_image_error = { Error: "IGClient::post_image()" }
+const login_error      = { Error: "IGClient::login()" }
 //----------------------------------
 export class IGClient
 {
@@ -18,11 +21,9 @@ export class IGClient
     return true
   }
   //------------------
-  public info() : void
+  public info() : any
   {
-    logger.info(`Selected user  ===> "${this.user}"`)
-    logger.info('Current IG users:')
-    logger.info(GetMapString(this.igusers))
+    return { Status: `Selected user  ===> "${this.user}"`, IGUsers: GetMapString(this.igusers) }
   }
   //------------------
   public getname() : string
@@ -34,7 +35,7 @@ export class IGClient
   {
     const creds = GetCredentials(user)
     if (!creds.validate())
-      logger.error('Failed to get credentials')
+      lg.error('Failed to get credentials')
 
     this.user = creds.name;
     this.pass = creds.pass
@@ -47,13 +48,13 @@ export class IGClient
     {
 
       const account = await this.ig.account.login(this.user, this.pass)
-      logger.info({ username: account.username, id: account.pk })
+      lg.info({ username: account.username, id: account.pk })
       if (account && this.igusers.set(this.user, account))
         return true
     }
     catch (e)
     {
-      logger.error({ Error: "login", Exception: e })
+      lg.error({ login_error ,e })
     }
     return false
   }
@@ -71,7 +72,7 @@ export class IGClient
     if (this.igusers.has(this.user))
     {
       const urls  : Array<string> = GetURLS(req.urls)
-      logger.info(urls)
+      lg.info(urls)
       let isVideo : boolean       = false
       let i       : number        = 0
       for (; i < urls.length; i++)
@@ -95,7 +96,7 @@ export class IGClient
   {
     if (!file_path)
       throw Error("Cannot post without media");
-    logger.info({is_video})
+    lg.info({is_video})
     if (is_video)
       return (await FormatVideo(file_path) && await this.post_video(caption, file_path))
     else
@@ -113,7 +114,7 @@ export class IGClient
     }
     catch (e)
     {
-      logger.error({ Error: "post_video", Exception: e })
+      lg.error({ Error: "post_video", Exception: e })
       throw e
     }
   }
@@ -129,9 +130,9 @@ export class IGClient
       }
       catch(e)
       {
-        logger.error({ Error: "post_image", Exception: e })
+        lg.error({ post_image_error, e })
       }
-    logger.error({ Error: "No media" })
+    lg.error({ Error: "No media" })
     return false
   }
 
