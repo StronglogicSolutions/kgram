@@ -68,6 +68,9 @@ export class IGClient
     if (!this.igusers.has(this.user) && !await this.login())
       return false
 
+    if (!req.urls)
+      throw new Error("Must provide media")
+
     if (this.igusers.has(this.user))
     {
       const urls  : Array<string> = GetURLS(req.urls)
@@ -131,7 +134,8 @@ export class IGClient
       {
         logger.error({ Error: "post_image", Exception: e })
       }
-    logger.error({ Error: "No media" })
+    else
+      logger.error({ Error: "No media" })
     return false
   }
 
