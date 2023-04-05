@@ -3,14 +3,20 @@ import { IgApiClient } from 'instagram-private-api';
 import { GetURLS, GetCredentials, GetMapString, GetMime, IsVideo,
          FetchFile, ReadFile, usermap, request, FormatVideo, FormatImage} from './util'
 
-const post_image_error = { Error: "IGClient::post_image()" }
-const login_error      = { Error: "IGClient::login()" }
+interface ErrorName  { Error : string }
+interface ClientInfo { Status: string, IGUsers: string }
+
+const post_image_error : ErrorName = { Error: "IGClient::post_image()" }
+const login_error      : ErrorName = { Error: "IGClient::login()" }
+const vid_path         : string    = 'temp/Formatted.mp4'
+const prev_path        : string    = 'temp/preview.jpg'
+const client_name      : string    = "Instagram Client"
 //----------------------------------
 export class IGClient
 {
   constructor()
   {
-    this.name    = "Instagram Client"
+    this.name    = client_name
     this.ig      = new IgApiClient();
     this.ig     != (void 0)
     this.igusers = new Map<string, boolean>()
@@ -21,7 +27,7 @@ export class IGClient
     return true
   }
   //------------------
-  public info() : any
+  public info() : ClientInfo
   {
     return { Status: `Selected user  ===> "${this.user}"`, IGUsers: GetMapString(this.igusers) }
   }
@@ -69,6 +75,9 @@ export class IGClient
     if (!this.igusers.has(this.user) && !await this.login())
       return false
 
+    if (!req.urls)
+      throw new Error("Must provide media")
+
     if (this.igusers.has(this.user))
     {
       const urls  : Array<string> = GetURLS(req.urls)
@@ -105,8 +114,8 @@ export class IGClient
   //------------------
   private async post_video(caption : string, file_path : string) : Promise<boolean>
   {
-    const video   = await ReadFile('temp/Formatted.mp4')
-    const preview = await ReadFile('temp/preview.jpg')
+    const video   = await ReadFile(vid_path)
+    const preview = await ReadFile(prev_path)
     try
     {
       return (video && preview &&
@@ -132,7 +141,8 @@ export class IGClient
       {
         lg.error({ post_image_error, e })
       }
-    lg.error({ Error: "No media" })
+    else
+      lg.error({ Error: "No media" })
     return false
   }
 
