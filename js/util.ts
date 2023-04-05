@@ -2,7 +2,7 @@ import fs from 'fs'
 import path, { resolve } from 'path'
 const { Readable } = require('stream');
 const { finished } = require('stream/promises');
-import logger from './logger'
+import lg from './logger'
 import type { AccountRepositoryLoginResponseLogged_in_user } from 'instagram-private-api/dist/responses'
 import ffmpeg from 'ffmpeg'
 import mime from 'mime/lite'
@@ -92,13 +92,13 @@ export function GetCredentials(user: string) : credentials
     const usercreds = config[user]
     if (usercreds)
     {
-      logger.info('Credentials found')
+      lg.info('Credentials found')
       creds.name = usercreds.name
       creds.pass = usercreds.pass
     }
   }
   else
-    logger.error({ PathException: configPath})
+    lg.error({ PathException: configPath})
 
     return creds
 }
@@ -117,24 +117,23 @@ export async function FetchFile(url : string) : Promise<string>
         await finished(Readable.fromWeb(response.body).pipe(fs.createWriteStream(dl_path)));
         return dl_path
       }
-      logger.error("Fetch error")
+      lg.error("Fetch error")
     }
     catch (e)
     {
-      logger.error({ FetchException: e, message: "Check version of node" })
+      lg.error({ FetchException: e, message: "Check version of node" })
     }
   }
   return ""
 }
 //---------------------------------
-export async function FormatVideo(file : string, makePreview : boolean = true) : Promise<boolean>
+export async function FormatVideo(file : string, make_preview : boolean = true) : Promise<boolean>
 {
-  const filePath = path.resolve(__dirname, file)
-  console.log(filePath)
-  if (!fs.existsSync(filePath))
+  const file_path = path.resolve(__dirname, file)
+  if (!fs.existsSync(file_path))
     throw new Error("File path doesn't exist!!!")
 
-  const video = await new ffmpeg(filePath)
+  const video = await new ffmpeg(file_path)
   if (video)
   {
     if (!validateAspectRatio(video.metadata.video.aspect))
@@ -142,21 +141,19 @@ export async function FormatVideo(file : string, makePreview : boolean = true) :
     else
       video.setVideoSize('1080x?', true, true)
 
-    if (makePreview)
-      video.fnExtractFrameToJPG(path.resolve(__dirname, '..'),
-      { frame_rate : 1,
-        number     : 1,
-        file_name  : 'preview.jpg' })
+    if (make_preview)
+      video.fnExtractFrameToJPG(path.resolve(__dirname, '..'), { frame_rate : 1,
+                                                                 number     : 1,
+                                                                 file_name  : 'preview.jpg' })
 
-    video.save(path.resolve(__dirname, '..', 'formatted.mp4'), (err, file) =>
+    video.save(path.resolve(__dirname, '..', 'formatted.mp4'), (err, new_file : string) =>
     {
-      if (err)
-        logger.error(err)
-      else
+      if (!err)
       {
-        logger.info({ Created: file})
+        lg.info({ new_file })
         return true
       }
+      lg.error(err)
     })
   }
   return false
@@ -178,9 +175,10 @@ export async function ReadFile(filepath : string) : Promise<Buffer>
   let p1 = new Promise(resolve => resolver = resolve)
   let p2 = new Promise(resolve => setTimeout(() => { }, 8000))
   let buffer : Buffer = undefined
-  await fs.readFile(filepath, (err, data) => {
+  await fs.readFile(filepath, (err, data) =>
+  {
     if (err)
-      logger.error('Failed to read file')
+      lg.error('Failed to read file')
     else
       buffer = data
     resolver()
@@ -200,10 +198,10 @@ export async function FormatImage(file : string) : Promise<string>
     gm(file).write(path, (err) =>
     {
       if (err)
-        logger.error("Error converting png to jpg")
+        lg.error("Error converting png to jpg")
       else
       {
-        logger.info("Converted png to jpg")
+        lg.info("Converted png to jpg")
         file = path
       }
       r()
