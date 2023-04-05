@@ -1,5 +1,5 @@
 import fs from 'fs'
-import path, { resolve } from 'path'
+import path from 'path'
 const { Readable } = require('stream');
 const { finished } = require('stream/promises');
 import lg from './logger'
@@ -7,6 +7,7 @@ import type { AccountRepositoryLoginResponseLogged_in_user } from 'instagram-pri
 import ffmpeg from 'ffmpeg'
 import mime from 'mime/lite'
 import gm from 'gm'
+import { IgUserHasLoggedOutError } from 'instagram-private-api';
 
 gm.subClass({ imageMagick: true })
 
@@ -189,24 +190,41 @@ export async function ReadFile(filepath : string) : Promise<Buffer>
 //----------------------------------
 export async function FormatImage(file : string) : Promise<string>
 {
+  let   r1, r2    = undefined
+  let   path      = file
+  const p1        = new Promise(resolve => r1 = resolve)
+  const p2        = new Promise(resolve => r2 = resolve)
+  const data      = gm(file)
   const mime_data = GetMime(file)
+  const size      = { width: 0, height: 0 }
+
+  data.size((err, info) =>
+  {
+    size.width  = info.width
+    size.height = info.height
+    r1()
+  })
+
+  await p1
+
   if (mime_data.includes('png'))
   {
-    let   r    = undefined
-    const p    = new Promise(resolve => r = resolve)
-    const path = file.substring(0, file.lastIndexOf('/') + 1) + 'temp.jpg'
-    gm(file).write(path, (err) =>
-    {
-      if (err)
-        lg.error("Error converting png to jpg")
-      else
-      {
-        lg.info("Converted png to jpg")
-        file = path
-      }
-      r()
-    })
-    await Promise.all([p])
+    lg.info("Must convert png to jpg")
+    path = file.substring(0, file.lastIndexOf('/') + 1) + 'temp.jpg'
   }
+
+  data.resize(size.width, size.height).background('black').gravity('Center').extent(1080, 1350).write(path, (err) =>
+  {
+    if (err)
+      lg.error({Error: "Error formatting image", Message: err})
+    else
+    {
+      lg.info("Image formatting complete")
+      file = path
+    }
+    r2()
+  })
+
+  await p2
   return file
 }
