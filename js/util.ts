@@ -50,7 +50,7 @@ export function GetMapString(map : usermap) : string
   let s = (map) ? `Map(${map.size}) {` : 'invalid map'
   for (let [key, value] of map)
   {
-    s += `${delim} '${key}' => '${value}'`
+    s += `${delim} '${key}' => '${(typeof value === 'boolean') ? value : value.pk }'`
     delim = ','
   }
   if (map)
