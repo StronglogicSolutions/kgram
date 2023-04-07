@@ -81,22 +81,12 @@ export class IGClient
     if (this.igusers.has(this.user))
     {
       const urls  : Array<string> = GetURLS(req.urls)
-      lg.info(urls)
-      let isVideo : boolean       = false
-      let i       : number        = 0
-      for (; i < urls.length; i++)
+      for (const url in urls)
       {
-        if (IsVideo(GetMime(urls[i])))
-        {
-          isVideo = true
-          break
-        }
+        if (IsVideo(GetMime(url)))
+          return await this.do_post(req.text, url, true)
       }
-
-      if (isVideo)
-        return await this.do_post(req.text, urls[i], true)
-      else
-        return await this.do_post(req.text, await FetchFile(urls[0]), false)
+      return await this.do_post(req.text, await FetchFile(urls[0]), false)
     }
     throw Error("Failed to login and set user")
   }
