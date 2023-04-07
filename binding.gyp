@@ -4,7 +4,8 @@
       "target_name": "kgramIPC",
       "cflags!": [ "-fno-exceptions" ],
       "cflags_cc!": [ "-fno-exceptions" ],
-      "sources": [ "cpp/native.cpp" ],
+      "sources": [ "cpp/native.cpp",
+                   "cpp/server.cpp" ],
       "include_dirs": [
         "<!@(node -p \"require('node-addon-api').include\")",
         "third_party/kproto/include",
