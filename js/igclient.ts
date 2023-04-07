@@ -53,9 +53,8 @@ export class IGClient
     try
     {
 
-      // const account = await this.ig.account.login(this.user, this.pass)
-      const account = true;
-      // lg.info({ username: account.username, id: account.pk })
+      const account = await this.ig.account.login(this.user, this.pass)
+      lg.info({ username: account.username, id: account.pk })
       if (account && this.igusers.set(this.user, account))
         return true
     }
@@ -75,13 +74,12 @@ export class IGClient
 
     if (!this.igusers.has(this.user) && !await this.login())
       return false
-    lg.info("We got this far!")
+
     if (!req.urls)
       throw new Error("Must provide media")
 
     if (this.igusers.has(this.user))
     {
-      lg.info("Getting URLs")
       const urls  : Array<string> = GetURLS(req.urls)
       lg.info(urls)
       let isVideo : boolean       = false
@@ -94,7 +92,7 @@ export class IGClient
           break
         }
       }
-      lg.info("Is video?")
+
       if (isVideo)
         return await this.do_post(req.text, urls[i], true)
       else
@@ -132,15 +130,12 @@ export class IGClient
   //------------------
   private async post_image(caption : string, file_path : string) : Promise<boolean>
   {
-    lg.info("will format")
     const image_path = await FormatImage(file_path)
-    lg.info("Image path points to formatted image")
     const file       = await ReadFile   (image_path)
     if (file)
       try
       {
-        // return (await this.ig.publish.photo({file, caption}) != undefined)
-        return true;
+        return (await this.ig.publish.photo({file, caption}) != undefined)
       }
       catch(e)
       {
