@@ -21,9 +21,9 @@ setInterval(() => poll(async (msg: request) =>
   }
   catch(e)
   {
-    lg.error({ exception: e })
+    lg.error(e)
   }
-  OnResult(result);
 
+  OnResult(result)
   lg.debug(client.info())
 }), 300)

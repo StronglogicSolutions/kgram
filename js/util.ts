@@ -106,6 +106,7 @@ export function GetCredentials(user: string) : credentials
 //---------------------------------
 export async function FetchFile(url : string) : Promise<string>
 {
+  lg.info("Fetching file")
   if (url)
   {
     try
