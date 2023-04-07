@@ -5,3 +5,7 @@ node_modules
 js/**/*.js
 config.json
 **/temp.*
+**/*.jpeg
+**/*.jpg
+**/*.png
+**/*.mp4
