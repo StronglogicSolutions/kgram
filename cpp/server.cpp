@@ -123,11 +123,10 @@ void server::recv()
   using namespace kutils;
   using buffers_t = std::vector<ipc_message::byte_buffer>;
 
-  auto is_duplicate = [this](const auto& raw_msg)
+  auto is_duplicate = [this](const auto& ipc_msg)
   {
-    const auto ipc_msg = static_cast<platform_message*>(raw_msg.get());
-    for (const auto& msg : msgs_)
-      if (static_cast<platform_message*>(msg.get())->id() == ipc_msg->id())
+    for (const auto& id : processed_)
+      if (id == ipc_msg->id())
         return true;
     return false;
   };
@@ -147,13 +146,14 @@ void server::recv()
     buffer.push_back({static_cast<char*>(msg.data()), static_cast<char*>(msg.data()) + msg.size()});
   }
 
-  ipc_msg_t ipc_msg = DeserializeIPCMessage(std::move(buffer));
-  if (is_duplicate(ipc_msg))
+  ipc_msg_t  ipc_msg = DeserializeIPCMessage(std::move(buffer));
+  const auto decoded = static_cast<platform_message*>(ipc_msg.get());
+  if (is_duplicate(decoded))
   {
     kutils::log("Ignoring duplicate IPC message");
     return;
   }
-
+  processed_.push_back(decoded->id());
   msgs_.push_back(std::move(ipc_msg));
   kutils::log("IPC message received");
   replies_pending_++;
