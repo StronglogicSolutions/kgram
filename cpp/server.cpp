@@ -123,6 +123,15 @@ void server::recv()
   using namespace kutils;
   using buffers_t = std::vector<ipc_message::byte_buffer>;
 
+  auto is_duplicate = [this](const auto& raw_msg)
+  {
+    const auto ipc_msg = static_cast<platform_message*>(raw_msg.get());
+    for (const auto& msg : msgs_)
+      if (static_cast<platform_message*>(msg.get())->id() == ipc_msg->id())
+        return true;
+    return false;
+  };
+
   zmq::message_t identity;
 
   if (!rx_.recv(identity) || identity.empty())
@@ -137,7 +146,15 @@ void server::recv()
     more_flag = rx_.get(zmq::sockopt::rcvmore);
     buffer.push_back({static_cast<char*>(msg.data()), static_cast<char*>(msg.data()) + msg.size()});
   }
-  msgs_.push_back(DeserializeIPCMessage(std::move(buffer)));
+
+  ipc_msg_t ipc_msg = DeserializeIPCMessage(std::move(buffer));
+  if (is_duplicate(ipc_msg))
+  {
+    kutils::log("Ignoring duplicate IPC message");
+    return;
+  }
+
+  msgs_.push_back(std::move(ipc_msg));
   kutils::log("IPC message received");
   replies_pending_++;
 }
