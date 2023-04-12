@@ -1,4 +1,4 @@
-import fs from 'fs'
+import fs, { watchFile } from 'fs'
 import path from 'path'
 const { Readable } = require('stream');
 const { finished } = require('stream/promises');
@@ -8,6 +8,7 @@ import ffmpeg from 'ffmpeg'
 import mime from 'mime/lite'
 import gm from 'gm'
 import { IgUserHasLoggedOutError } from 'instagram-private-api';
+import { exec } from 'child_process'
 
 gm.subClass({ imageMagick: true })
 
@@ -227,5 +228,27 @@ export async function FormatImage(file : string) : Promise<string>
   })
 
   await p2
+  return file
+}
+//----------------------------------
+export async function CreateImage(text : string) : Promise<string>
+{
+  let   r    = undefined
+  const p    = new Promise(resolve => r = resolve)
+  const file = "generated.png"
+
+  const command = `convert -size "1080x1080" -background "#666666" -fill "#D3D3D3" -font "Ubuntu-Mono" -interword-spacing 8 -kerning 4 -pointsize 24 -border 2%x2% -bordercolor "#666666" -gravity Center -interline-spacing 24 -stroke "#FEFEFE" -strokewidth 0.5 -fill white caption:\"${text}\" ${file}`
+
+  exec(command, (error, stdout, stderr) =>
+  {
+    if (error)
+      lg.error(error)
+    if (stderr)
+      lg.error(stderr)
+
+    r()
+  })
+
+  await p
   return file
 }
