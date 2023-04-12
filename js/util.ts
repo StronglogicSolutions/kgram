@@ -65,6 +65,12 @@ export interface credentials_interface
   pass: string
   validate(): boolean
 }
+//-------------------------------
+interface dimensions
+{
+  width: number
+  height: number
+}
 //---------------------------------
 export class credentials implements credentials_interface
 {
@@ -190,6 +196,45 @@ export async function ReadFile(filepath : string) : Promise<Buffer>
   return buffer
 }
 //----------------------------------
+enum image_type
+{
+  square,
+  portrait,
+  landscape
+}
+//----------------------------------
+interface image_style
+{
+  type : image_type
+  size : dimensions
+}
+//----------------------------------
+function FindBestSize(size : dimensions) : image_style
+{
+  if (size.height === size.width)
+    return { type: image_type.square, size: { width: 1080, height: 1080 } }
+  else
+  if (size.height > size.width)
+  {
+    return { type: image_type.portrait, size: { width: null, height: 1350 } }
+  }
+
+  return { type: image_type.landscape, size: { width: 1080, height: null } }
+}
+//----------------------------------
+function GetExtent(type : image_type) : dimensions
+{
+  switch (type)
+  {
+    case image_type.landscape:
+      return { width: 1080, height: 566 }
+    case image_type.portrait:
+      return { width: 1080, height: 1350 }
+    case image_type.square:
+      return { width: 1080, height: 1080 }
+  }
+}
+//----------------------------------
 export async function FormatImage(file : string) : Promise<string>
 {
   let   r1, r2    = undefined
@@ -198,16 +243,20 @@ export async function FormatImage(file : string) : Promise<string>
   const p2        = new Promise(resolve => r2 = resolve)
   const data      = gm(file)
   const mime_data = GetMime(file)
-  const size      = { width: 0, height: 0 }
+  const orig_size = { width: 0, height: 0 }
 
   data.size((err, info) =>
   {
-    size.width  = info.width
-    size.height = info.height
+    orig_size.width  = info.width
+    orig_size.height = info.height
     r1()
   })
 
   await p1
+
+  const style  = FindBestSize(orig_size)
+  const size   = style.size
+  const extent = GetExtent(style.type)
 
   if (mime_data.includes('png'))
   {
@@ -215,7 +264,7 @@ export async function FormatImage(file : string) : Promise<string>
     path = file.substring(0, file.lastIndexOf('/') + 1) + 'temp.jpg'
   }
 
-  data.resize(size.width, size.height).background('black').gravity('Center').extent(1080, 1350).write(path, (err) =>
+  data.resize(size.width, size.height).background('black').gravity('Center').extent(extent.width, extent.height).write(path, (err) =>
   {
     if (err)
       lg.error({Error: "Error formatting image", Message: err})
