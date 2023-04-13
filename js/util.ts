@@ -215,18 +215,18 @@ export interface image_style
 export function FindBestSize(size : dimensions) : image_style
 {
   const θ : number = 1 // Coefficient to optionally shrink images with imperfect aspect ratios
-  if (size.height === size.width)
+  if (size.height === size.width)                                                   // SQUARE
     return { type: image_type.square, size: { width: 1080, height: 1080 } }
   else
   if (size.height > size.width)
   {
-    if ((1080 / size.width) < (1350 / size.height))
+    if ((1080 / size.width) < (1350 / size.height))                                 // PORTRAIT
       return { type: image_type.portrait, size: { width: 1080 * θ, height: null } }
     else
       return { type: image_type.portrait, size: { width: null, height: 1350 * θ } }
   }
 
-  if ((1080 / size.width) < (566 / size.height))
+  if ((1080 / size.width) < (566 / size.height))                                    // LANDSCAPE
     return { type: image_type.landscape, size: { width: 1080 * θ, height: null } }
   else
     return { type: image_type.landscape, size: { width: null, height: 566 * θ } }
@@ -236,12 +236,9 @@ export function GetExtent(type : image_type) : dimensions
 {
   switch (type)
   {
-    case image_type.landscape:
-      return { width: 1080, height: 566 }
-    case image_type.portrait:
-      return { width: 1080, height: 1350 }
-    case image_type.square:
-      return { width: 1080, height: 1080 }
+    case image_type.square:    return { width: 1080, height: 1080 }
+    case image_type.portrait:  return { width: 1080, height: 1350 }
+    case image_type.landscape: return { width: 1080, height: 566  }
   }
 }
 //----------------------------------
