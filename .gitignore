@@ -3,6 +3,7 @@ node_modules
 .vscode
 **/*.map
 js/**/*.js
+js/**/test.*
 config.json
 **/temp.*
 **/*.jpeg
