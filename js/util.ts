@@ -66,7 +66,7 @@ export interface credentials_interface
   validate(): boolean
 }
 //-------------------------------
-interface dimensions
+export interface dimensions
 {
   width: number
   height: number
@@ -196,33 +196,39 @@ export async function ReadFile(filepath : string) : Promise<Buffer>
   return buffer
 }
 //----------------------------------
-enum image_type
+export enum image_type
 {
   square,
   portrait,
   landscape
 }
 //----------------------------------
-interface image_style
+export interface image_style
 {
   type : image_type
   size : dimensions
 }
 //----------------------------------
-function FindBestSize(size : dimensions) : image_style
+export function FindBestSize(size : dimensions) : image_style
 {
   if (size.height === size.width)
     return { type: image_type.square, size: { width: 1080, height: 1080 } }
   else
   if (size.height > size.width)
   {
-    return { type: image_type.portrait, size: { width: null, height: 1350 } }
+    if ((1080 / size.width) < (1350 / size.height))
+      return { type: image_type.portrait, size: { width: 1080, height: null } }
+    else
+      return { type: image_type.portrait, size: { width: null, height: 1350 } }
   }
 
-  return { type: image_type.landscape, size: { width: 1080, height: null } }
+  if ((1080 / size.width) < (566 / size.height))
+    return { type: image_type.landscape, size: { width: 1080, height: null } }
+  else
+    return { type: image_type.landscape, size: { width: null, height: 566 } }
 }
 //----------------------------------
-function GetExtent(type : image_type) : dimensions
+export function GetExtent(type : image_type) : dimensions
 {
   switch (type)
   {

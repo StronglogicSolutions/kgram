@@ -23,7 +23,6 @@ setInterval(() => poll(async (msg: request) =>
   {
     lg.error(e)
   }
-
   OnResult(result)
   lg.debug(client.info())
 }), 300)
