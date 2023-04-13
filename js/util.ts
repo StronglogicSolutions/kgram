@@ -14,6 +14,7 @@ gm.subClass({ imageMagick: true })
 
 const FetchException : string = "FetchException"
 const PathException  : string = "Path does not exist"
+const center         : string = "Center"
 
 type IGUser = AccountRepositoryLoginResponseLogged_in_user
 //---------------------------------
@@ -211,21 +212,22 @@ export interface image_style
 //----------------------------------
 export function FindBestSize(size : dimensions) : image_style
 {
+  const θ : number = 1 // Coefficient to optionally shrink images with imperfect aspect ratios
   if (size.height === size.width)
     return { type: image_type.square, size: { width: 1080, height: 1080 } }
   else
   if (size.height > size.width)
   {
     if ((1080 / size.width) < (1350 / size.height))
-      return { type: image_type.portrait, size: { width: 1080, height: null } }
+      return { type: image_type.portrait, size: { width: 1080 * θ, height: null } }
     else
-      return { type: image_type.portrait, size: { width: null, height: 1350 } }
+      return { type: image_type.portrait, size: { width: null, height: 1350 * θ } }
   }
 
   if ((1080 / size.width) < (566 / size.height))
-    return { type: image_type.landscape, size: { width: 1080, height: null } }
+    return { type: image_type.landscape, size: { width: 1080 * θ, height: null } }
   else
-    return { type: image_type.landscape, size: { width: null, height: 566 } }
+    return { type: image_type.landscape, size: { width: null, height: 566 * θ } }
 }
 //----------------------------------
 export function GetExtent(type : image_type) : dimensions
@@ -241,7 +243,7 @@ export function GetExtent(type : image_type) : dimensions
   }
 }
 //----------------------------------
-export async function FormatImage(file : string) : Promise<string>
+export async function FormatImage(file : string, out : string = 'temp.jpg') : Promise<string>
 {
   let   r1, r2    = undefined
   let   path      = file
@@ -264,13 +266,15 @@ export async function FormatImage(file : string) : Promise<string>
   const size   = style.size
   const extent = GetExtent(style.type)
 
+  lg.info({BestSize: size})
+
   if (mime_data.includes('png'))
   {
-    lg.info("Must convert png to jpg")
-    path = file.substring(0, file.lastIndexOf('/') + 1) + 'temp.jpg'
+    lg.info({ SaveAs: out, Reminder: 'IG images must be jpg'})
+    path = file.substring(0, file.lastIndexOf('/') + 1) + out
   }
 
-  data.resize(size.width, size.height).background('black').gravity('Center').extent(extent.width, extent.height).write(path, (err) =>
+  data.resize(size.width, size.height).background('black').gravity(center).extent(extent.width, extent.height).write(path, (err) =>
   {
     if (err)
       lg.error({Error: "Error formatting image", Message: err})
