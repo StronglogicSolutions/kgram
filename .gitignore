@@ -4,6 +4,7 @@ node_modules
 **/*.map
 js/**/*.js
 js/**/test.*
+test/**/*.js
 config.json
 **/temp.*
 **/*.jpeg

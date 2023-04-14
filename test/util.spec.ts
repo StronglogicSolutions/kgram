@@ -1,5 +1,5 @@
 import assert from 'assert'
-import { FindBestSize, GetExtent, image_type, dimensions } from '../js/util'
+import { FindBestSize, GetExtent, image_type, dimensions } from '../js/gfx'
 
 describe('Utils tests', () =>
 {
