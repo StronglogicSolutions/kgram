@@ -176,8 +176,6 @@ export function GetMime(path : string) : string
 //----------------------------------
 export function IsVideo(mime : string) : boolean
 {
-  if (!mime)
-    return false
   return mime.includes('video')
 }
 //----------------------------------
