@@ -242,3 +242,18 @@ export async function CreateImage(text : string) : Promise<string>
   await p
   return file
 }
+//----------------------------------
+export async function FormatLongPost(text : string) : Promise<Array<string>>
+{
+  const result = []
+
+  const clean_text = text.replace(/\.\.\.\//g, '').replace(/\.\.\//g, '')
+  let chunk = clean_text.substring(0, clean_text.length / 2)
+  while (chunk.length > 0)
+  {
+    const pos = chunk.length / 2
+    result.push(chunk.substring(0, pos))
+    chunk = chunk.substring(pos)
+  }
+  return result
+}
