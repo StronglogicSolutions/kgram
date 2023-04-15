@@ -5,7 +5,8 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "build": "tsc -p ./"
+    "build": "tsc -p ./",
+    "test": "mocha"
   },
   "dependencies": {
     "bindings": "^1.5.0",
