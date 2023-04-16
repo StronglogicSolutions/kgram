@@ -1,7 +1,8 @@
 import lg from './logger'
 import { IgApiClient } from 'instagram-private-api';
 import { GetURLS, GetCredentials, GetMapString, GetMime, IsVideo,
-         FetchFile, ReadFile, usermap, request, FormatVideo, FormatImage} from './util'
+         FetchFile, ReadFile, usermap, request, FormatVideo, FormatImage,
+         CreateImage, FormatLongPost} from './util'
 
 interface ErrorName  { Error : string }
 interface ClientInfo { Status: string, IGUsers: string }
@@ -11,6 +12,7 @@ const login_error      : ErrorName = { Error: "IGClient::login()" }
 const vid_path         : string    = 'temp/Formatted.mp4'
 const prev_path        : string    = 'temp/preview.jpg'
 const client_name      : string    = "Instagram Client"
+const is_big_post = (text : string) => { return (text.length > 2000) }
 //----------------------------------
 export class IGClient
 {
@@ -76,7 +78,12 @@ export class IGClient
       return false
 
     if (!req.urls)
-      throw new Error("Must provide media")
+    {
+      if (is_big_post(req.text))
+        return await this.post_generated_text(req.text)
+      else
+        throw new Error("Must provide media")
+    }
 
     if (this.igusers.has(this.user))
     {
@@ -134,6 +141,18 @@ export class IGClient
     else
       lg.error({ Error: "No media" })
     return false
+  }
+  //-----------------
+  private async post_generated_text(text : string) : Promise<boolean>
+  {
+    const strings = FormatLongPost(text)
+    const items   = []
+    const caption = (text.length > 2200) ? text.substring(0, 2200) : text
+
+    for (let i = 0; i < 10; i++)
+      items.push({ file: await ReadFile(await CreateImage(strings[i], `page${i + 1}`)), width: 1080, height: 1080 })
+
+    return await this.ig.publish.album({ caption, items }) != undefined
   }
 
   private name    : string
