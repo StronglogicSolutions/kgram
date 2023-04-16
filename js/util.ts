@@ -10,15 +10,31 @@ import gm from 'gm'
 import { exec } from 'child_process'
 import { make_caption_command, validate_aspect_ratio, FindBestSize, GetExtent } from './gfx'
 
+//---------------------------------
+//----------INIT-------------------
+//---------------------------------
 gm.subClass({ imageMagick: true })
 
-const center : string = "Center"
+//---------------------------------
+//----------CONSTANTS--------------
+//---------------------------------
+const center   : string = "Center"
+const nib_size : number = 550
 
-type IGUser = AccountRepositoryLoginResponseLogged_in_user
+//---------------------------------
+//----------TYPES------------------
+//---------------------------------
+       type IGUser = AccountRepositoryLoginResponseLogged_in_user
+export type usermap = Map<string, IGUser | boolean>
 
-export function GetURLS(s: string) : Array<string>
+//---------------------------------
+//---------INTERFACE---------------
+//---------------------------------
+export interface credentials_interface
 {
-  return (s.length > 0) ? s.split('>').filter(u => u) : []
+  name: string
+  pass: string
+  validate(): boolean
 }
 //---------------------------------
 export interface request
@@ -28,8 +44,20 @@ export interface request
   urls:  string
   media: Array<string>
 }
+
 //---------------------------------
-export type usermap = Map<string, IGUser | boolean>
+//----------SMOL-------------------
+//---------------------------------
+const sanitize = (s : string) => s.replace(/\.\.\.\//g, '').replace(/\.\.\//g, '').replace(/\"/g, '\\"')
+
+//---------------------------------
+//---------MAIN UTILS--------------
+//---------------------------------
+export function GetURLS(s: string) : Array<string>
+{
+  return (s.length > 0) ? s.split('>').filter(u => u) : []
+}
+
 //---------------------------------
 export function GetMapString(map : usermap) : string
 {
@@ -44,14 +72,6 @@ export function GetMapString(map : usermap) : string
     s += ' }'
   return s
 }
-//-------------------------------
-export interface credentials_interface
-{
-  name: string
-  pass: string
-  validate(): boolean
-}
-
 //---------------------------------
 export class credentials implements credentials_interface
 {
@@ -224,21 +244,52 @@ export async function FormatImage(file : string, out : string = 'temp.jpg') : Pr
   return file
 }
 //----------------------------------
-export async function CreateImage(text : string) : Promise<string>
+export async function CreateImage(text : string, name = "generated.png") : Promise<string>
 {
   let   r    = undefined
   const p    = new Promise(resolve => r = resolve)
-  const file = "generated.png"
 
-  exec(make_caption_command(text, file), (error, stdout, stderr) =>
+  exec(make_caption_command(text, name), (error, stdout, stderr) =>
   {
     if (error)
-      lg.error(error)
+      lg.error({ ...error, message: error.message.substring(0, 250)})
+    else
     if (stderr)
       lg.error(stderr)
     r()
   })
 
   await p
-  return file
+  return name
+}
+//----------------------------------
+export function FormatLongPost(input : string) : Array<string>
+{
+  const chunks = []
+  const text = sanitize(input)
+  for (let i = 0, read = 0; read < text.length;)
+  {
+    const size = ((text.length - read) > nib_size) ? nib_size : (text.length - read)
+    let chunk = text.substring(read, (read + size))
+
+    if ((read + size) === text.length)
+    {
+      if (size < 8)
+        chunks[chunks.length - 1] += chunk
+      else
+        chunks.push(chunk)
+      break
+    }
+
+    const w_id = chunk.lastIndexOf(' ')
+    const p_id = chunk.lastIndexOf('.')
+    const pos = (i + size < text.length) ?
+      (w_id > p_id) ? w_id : p_id :
+      size
+    chunks.push((pos === 0) ? chunk : chunk.substring(0, pos))
+    i++
+    read += pos
+  }
+
+  return chunks
 }
