@@ -1,7 +1,7 @@
 import fs, { watchFile } from 'fs'
 import path from 'path'
-const { Readable } = require('stream');
-const { finished } = require('stream/promises');
+const { Readable } = require('stream')
+const { finished } = require('stream/promises')
 import lg from './logger'
 import type { AccountRepositoryLoginResponseLogged_in_user } from 'instagram-private-api/dist/responses'
 import ffmpeg from 'ffmpeg'
@@ -18,8 +18,9 @@ gm.subClass({ imageMagick: true })
 //---------------------------------
 //----------CONSTANTS--------------
 //---------------------------------
-const center   : string = "Center"
-const nib_size : number = 550
+const center    : string = "Center"
+const nib_size  : number = 550
+const not_found : number = -1
 
 //---------------------------------
 //----------TYPES------------------
@@ -42,7 +43,14 @@ export interface request
   user:  string
   text:  string
   urls:  string
+  time:  string
   media: Array<string>
+}
+//----------------------------------
+interface thread_info
+{
+  text    : string
+  indexes : Array<number>
 }
 
 //---------------------------------
@@ -263,10 +271,10 @@ export async function CreateImage(text : string, name = "generated.png") : Promi
   return name
 }
 //----------------------------------
-export function FormatLongPost(input : string) : Array<string>
+export function FormatLongPost(input : string, clean_text : boolean = true) : Array<string>
 {
   const chunks = []
-  const text = sanitize(input)
+  const text = (clean_text) ? sanitize(input) : input
   for (let i = 0, read = 0; read < text.length;)
   {
     const size = ((text.length - read) > nib_size) ? nib_size : (text.length - read)
@@ -292,4 +300,47 @@ export function FormatLongPost(input : string) : Array<string>
   }
 
   return chunks
+}
+
+//----------------------------------
+const is_newer   = (a, b) => { return a > b }
+const is_thread  = (text) => { return text.endsWith("../") || text.endsWith(".../") }
+const is_end     = (text) => { return (text.endsWith('fin')) }
+const find_start = (r) =>
+{
+  for (let i = 0; i < r.length; i++)
+    if (r[i].text.startsWith("🧵"))
+      return i
+  return -1
+}
+//----------------------------------
+export const make_post_from_thread = (reqs) : thread_info =>
+{
+  const info : thread_info = { text: "", indexes: [] }
+  let   idx = find_start(reqs)
+  if (idx === not_found)
+    return info
+
+  info.indexes.push(idx)
+  const last                  = reqs[idx]
+  const posts : Array<string> = [sanitize(last.text)]
+  let   time                  = last.time
+
+  for (const req of reqs.slice(idx + 1))
+  {
+    if (is_newer(req.time, time) && is_thread(req.text))
+    {
+      time = req.time
+      posts.push(sanitize(req.text))
+      info.indexes.push(idx++)
+    }
+    else
+    if (is_end(req.text))
+    {
+      info.indexes.push(idx++)
+      break
+    }
+  }
+
+  info.text = posts.join('\n')
 }
