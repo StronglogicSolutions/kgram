@@ -14,6 +14,7 @@ struct request_t
   std::string user;
   std::string text;
   std::string media;
+  std::string time;
 };
 //----------------------------------------------------------------
 node_obj_t req_to_node_obj(request_t req, node_env_t& env);

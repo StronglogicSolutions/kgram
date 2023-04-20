@@ -12,6 +12,7 @@ node_obj_t req_to_node_obj(request_t req, node_env_t& env)
   obj.Set("user", req.user);
   obj.Set("text", req.text);
   obj.Set("urls", req.media);
+  obj.Set("time", req.time);
   return obj;
 }
 //-------------------------------------------------------------
@@ -31,6 +32,7 @@ void request_converter::on_request(ipc_msg_t msg)
   req.text  = ipc_msg->content();
   req.user  = ipc_msg->user();
   req.media = ipc_msg->urls();
+  req.time  = ipc_msg->time();
 }
 //-------------------------------------------------------------
 server::server()
@@ -123,16 +125,9 @@ void server::recv()
   using namespace kutils;
   using buffers_t = std::vector<ipc_message::byte_buffer>;
 
-  auto is_duplicate = [this](const auto& ipc_msg)
-  {
-    for (const auto& id : processed_)
-      if (id == ipc_msg->id())
-        return true;
-    return false;
-  };
-
+  auto is_duplicate = [this](const auto& m) { for (const auto& id : processed_) if (id == m->id()) return true; // match
+                                              return false; };                                                  // no match
   zmq::message_t identity;
-
   if (!rx_.recv(identity) || identity.empty())
     return log("Socket failed to receive");
 
@@ -153,6 +148,7 @@ void server::recv()
     kutils::log("Ignoring duplicate IPC message");
     return;
   }
+
   processed_.push_back(decoded->id());
   msgs_.push_back(std::move(ipc_msg));
   kutils::log("IPC message received");

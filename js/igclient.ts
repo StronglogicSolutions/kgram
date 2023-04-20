@@ -2,7 +2,7 @@ import lg from './logger'
 import { IgApiClient } from 'instagram-private-api';
 import { GetURLS, GetCredentials, GetMapString, GetMime, IsVideo,
          FetchFile, ReadFile, usermap, request, FormatVideo, FormatImage,
-         CreateImage, FormatLongPost} from './util'
+         CreateImage, FormatLongPost, make_post_from_thread} from './util'
 
 interface ErrorName  { Error : string }
 interface ClientInfo { Status: string, IGUsers: string }
@@ -12,16 +12,16 @@ const login_error      : ErrorName = { Error: "IGClient::login()" }
 const vid_path         : string    = 'temp/Formatted.mp4'
 const prev_path        : string    = 'temp/preview.jpg'
 const client_name      : string    = "Instagram Client"
-const is_big_post = (text : string) => { return (text.length > 2000) }
+
 //----------------------------------
 export class IGClient
 {
   constructor()
   {
     this.name    = client_name
-    this.ig      = new IgApiClient();
-    this.ig     != (void 0)
+    this.ig      = new IgApiClient()
     this.igusers = new Map<string, boolean>()
+    this.rx_req  = new Array<request>()
   }
   //------------------
   public init() : boolean
@@ -54,7 +54,6 @@ export class IGClient
     this.ig.state.generateDevice(this.user)
     try
     {
-
       const account = await this.ig.account.login(this.user, this.pass)
       lg.info({ username: account.username, id: account.pk })
       if (account && this.igusers.set(this.user, account))
@@ -79,10 +78,8 @@ export class IGClient
 
     if (!req.urls)
     {
-      if (is_big_post(req.text))
-        return await this.post_generated_text(req.text)
-      else
-        throw new Error("Must provide media")
+      this.rx_req.push(req);
+      return await this.try_big_post()
     }
 
     if (this.igusers.has(this.user))
@@ -102,7 +99,7 @@ export class IGClient
   {
     if (!file_path)
       throw Error("Cannot post without media");
-    lg.info({is_video})
+
     if (is_video)
       return (await FormatVideo(file_path) && await this.post_video(caption, file_path))
     else
@@ -154,10 +151,28 @@ export class IGClient
 
     return await this.ig.publish.album({ caption, items }) != undefined
   }
+  //-----------------
+  private async try_big_post() : Promise<boolean>
+  {
+    const info = make_post_from_thread(this.rx_req)
+    if (!info.text)
+      return false
+
+    if (await this.post_generated_text(info.text))
+    {
+      for (let i = info.indexes.length; i >= 0; i--)
+        this.rx_req.splice(info.indexes[i], 1)
+      return true
+    }
+
+    lg.debug({ NoPost: "no media and threads to post" })
+    return false
+  }
 
   private name    : string
   private user    : string
   private pass    : string
   private ig      : IgApiClient
   private igusers : usermap
+  private rx_req  : Array<request>;
 }
