@@ -51,6 +51,12 @@ export class IGClient
   //------------------
   private async login() : Promise<boolean>
   {
+    if (!this.igusers[this.user])
+    {
+      lg.warn("This user already failed to login")
+      return false
+    }
+
     this.ig.state.generateDevice(this.user)
     try
     {
@@ -64,6 +70,8 @@ export class IGClient
       lg.error({ login_error ,e })
     }
     lg.warn("Should prevent login flood")
+    this.igusers.set(this.user, false)
+
     return false
   }
   //------------------
