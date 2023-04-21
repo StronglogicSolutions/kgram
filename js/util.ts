@@ -303,8 +303,8 @@ export function FormatLongPost(input : string, clean_text : boolean = true) : Ar
 }
 
 //----------------------------------
-const is_newer   = (a, b) => { return a > b }
-const is_thread  = (text) => { return text.endsWith("../") || text.endsWith(".../") }
+const is_newer   = (a, b) => { console.log('comparing ', a, ' and ', b); return a > b }
+const is_thread  = (text) => { const is_thread = (text.endsWith("../") || text.endsWith(".../")); console.log(is_thread); return is_thread }
 const is_end     = (text) => { return (text.endsWith('fin')) }
 const find_start = (r) =>
 {
@@ -318,24 +318,27 @@ export const make_post_from_thread = (reqs) : thread_info =>
 {
   const info : thread_info = { text: "", indexes: [] }
   let   idx = find_start(reqs)
+
   if (idx === not_found)
     return info
 
   info.indexes.push(idx)
+
   const last                  = reqs[idx]
   const posts : Array<string> = [sanitize(last.text)]
   let   time                  = last.time
 
-  for (const req of reqs.slice(idx + 1))
+  idx++
+
+  for (const req of reqs.slice(idx))
   {
-    if (is_newer(req.time, time) && is_thread(req.text))
+    if      (is_newer(req.time, time) && is_thread(req.text))
     {
       time = req.time
       posts.push(sanitize(req.text))
       info.indexes.push(idx++)
     }
-    else
-    if (is_end(req.text))
+    else if (is_end(req.text))
     {
       info.indexes.push(idx++)
       break
@@ -343,4 +346,6 @@ export const make_post_from_thread = (reqs) : thread_info =>
   }
 
   info.text = posts.join('\n')
+
+  return info
 }
