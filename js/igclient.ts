@@ -63,6 +63,7 @@ export class IGClient
     {
       lg.error({ login_error ,e })
     }
+    lg.warn("Should prevent login flood")
     return false
   }
   //------------------
@@ -78,6 +79,7 @@ export class IGClient
 
     if (!req.urls)
     {
+      lg.debug("Adding post with no media to queue in case it's a thread")
       this.rx_req.push(req);
       return await this.try_big_post()
     }
@@ -143,21 +145,25 @@ export class IGClient
   private async post_generated_text(text : string) : Promise<boolean>
   {
     const strings = FormatLongPost(text)
+    lg.debug({ LongPost: strings })
     const items   = []
     const caption = (text.length > 2200) ? text.substring(0, 2200) : text
 
     for (let i = 0; i < 10; i++)
       items.push({ file: await ReadFile(await CreateImage(strings[i], `page${i + 1}`)), width: 1080, height: 1080 })
-
+    lg.debug({ ToPost: items })
     return await this.ig.publish.album({ caption, items }) != undefined
   }
   //-----------------
   private async try_big_post() : Promise<boolean>
   {
+    lg.debug("Checking for thread")
     const info = make_post_from_thread(this.rx_req)
+    lg.debug(info)
     if (!info.text)
       return false
 
+    lg.debug("Attempting to generate")
     if (await this.post_generated_text(info.text))
     {
       for (let i = info.indexes.length; i >= 0; i--)
