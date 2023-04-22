@@ -67,7 +67,7 @@ export class IGClient
     }
     catch (e)
     {
-      lg.error({ login_error ,e })
+      lg.error({ login_error: e })
     }
     lg.warn("Should prevent login flood")
     this.igusers.set(this.user, false)

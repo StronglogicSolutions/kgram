@@ -316,6 +316,8 @@ const find_start = (r) =>
 //----------------------------------
 export const make_post_from_thread = (reqs) : thread_info =>
 {
+  reqs.sort((a, b) => { return a.time < b.time })
+
   const info : thread_info = { text: "", indexes: [] }
   let   idx = find_start(reqs)
 
