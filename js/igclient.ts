@@ -51,7 +51,7 @@ export class IGClient
   //------------------
   private async login() : Promise<boolean>
   {
-    if (!this.igusers[this.user])
+    if (this.igusers.has(this.user) && !this.igusers[this.user])
     {
       lg.warn("This user already failed to login")
       return false
