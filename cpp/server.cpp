@@ -8,7 +8,7 @@ namespace kiq
 //----------------------------------------------------------------
 node_obj_t req_to_node_obj(request_t req, node_env_t& env)
 {
-  kutils::log("Received req with time ", req.time.c_str()); 
+  kutils::log("Received req with time ", req.time.c_str());
   node_obj_t obj = node_obj_t::New(env);
   obj.Set("user", req.user);
   obj.Set("text", req.text);
@@ -145,6 +145,7 @@ void server::recv()
     buffer.push_back({static_cast<char*>(msg.data()), static_cast<char*>(msg.data()) + msg.size()});
   }
   kutils::log("Buffer received ", std::to_string(buffer.size()).c_str(), " frames");
+  kutils::log("Calling DeserializeIPCMessage");
   ipc_msg_t  ipc_msg = DeserializeIPCMessage(std::move(buffer));
   kutils::log("Message type is ", std::to_string(ipc_msg->type()).c_str());
   const auto decoded = static_cast<platform_message*>(ipc_msg.get());
