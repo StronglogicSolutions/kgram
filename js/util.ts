@@ -273,6 +273,7 @@ export async function CreateImage(text : string, name = "generated.png") : Promi
 //----------------------------------
 export function FormatLongPost(input : string, clean_text : boolean = true) : Array<string>
 {
+  lg.trace({ Formatting: input })
   const chunks = []
   const text = (clean_text) ? sanitize(input) : input
   for (let i = 0, read = 0; read < text.length;)
@@ -299,6 +300,7 @@ export function FormatLongPost(input : string, clean_text : boolean = true) : Ar
     read += pos
   }
 
+  lg.trace({ FormatFinish: `${chunks.length} chunks`})
   return chunks
 }
 
@@ -347,7 +349,7 @@ export const make_post_from_thread = (reqs) : thread_info =>
     }
   }
 
-  info.text = posts.join('\n')
+  info.text = (posts.length > 1) ? posts.join('\n') : ""
 
   return info
 }
