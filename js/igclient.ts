@@ -51,6 +51,7 @@ export class IGClient
   //------------------
   private async login() : Promise<boolean>
   {
+    lg.debug("login")
     if (this.igusers.has(this.user) && !this.igusers.get(this.user))
     {
       lg.warn("This user already failed to login")
@@ -63,7 +64,10 @@ export class IGClient
       const account = await this.ig.account.login(this.user, this.pass)
       lg.info({ username: account.username, id: account.pk })
       if (account && this.igusers.set(this.user, account))
+      {
+        lg.debug("Returning true")
         return true
+      }
     }
     catch (e)
     {
