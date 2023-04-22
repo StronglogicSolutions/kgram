@@ -69,7 +69,7 @@ export class IGClient
     {
       lg.error({ login_error: e })
     }
-    lg.warn("Should prevent login flood")
+    lg.warn("Setting user as false to prevent login flood")
     this.igusers.set(this.user, false)
 
     return false
@@ -77,12 +77,13 @@ export class IGClient
   //------------------
   public async post(req : request) : Promise<boolean>
   {
+    lg.debug(req)
     this.set_user(req.user)
 
     if (!this.user || !this.pass)
       throw new Error("Credentials not set")
 
-    if (!this.igusers.has(this.user) && !await this.login())
+    if (!this.igusers[this.user] && !await this.login())
       return false
 
     if (!req.urls)
