@@ -51,7 +51,7 @@ export class IGClient
   //------------------
   private async login() : Promise<boolean>
   {
-    if (this.igusers.has(this.user) && !this.igusers[this.user])
+    if (this.igusers.has(this.user) && !this.igusers.get(this.user))
     {
       lg.warn("This user already failed to login")
       return false
@@ -83,15 +83,15 @@ export class IGClient
     if (!this.user || !this.pass)
       throw new Error("Credentials not set")
 
-    if (!this.igusers[this.user] && !await this.login())
-      return false
-
     if (!req.urls)
     {
       lg.debug("Adding post with no media to queue in case it's a thread")
       this.rx_req.push(req);
       return await this.try_big_post()
     }
+
+    if (!this.igusers.get(this.user) && !await this.login())
+      return false
 
     if (this.igusers.has(this.user))
     {
