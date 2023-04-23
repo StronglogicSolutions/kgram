@@ -4,11 +4,8 @@ import { GetURLS, GetCredentials, GetMapString, GetMime, IsVideo,
          FetchFile, ReadFile, usermap, request, FormatVideo, FormatImage,
          CreateImage, FormatLongPost, make_post_from_thread} from './util'
 
-interface ErrorName  { Error : string }
 interface ClientInfo { Status: string, IGUsers: string }
 
-const post_image_error : ErrorName = { Error: "IGClient::post_image()" }
-const login_error      : ErrorName = { Error: "IGClient::login()" }
 const vid_path         : string    = 'temp/Formatted.mp4'
 const prev_path        : string    = 'temp/preview.jpg'
 const client_name      : string    = "Instagram Client"
@@ -94,7 +91,9 @@ export class IGClient
       return await this.try_big_post()
     }
 
-    if (!this.igusers.get(this.user) && !await this.login())
+    const user_logged_in = !this.igusers.get(this.user)
+    lg.debug({ UserLoggedIn: user_logged_in })
+    if (!user_logged_in && !await this.login())
       return false
 
     if (this.igusers.has(this.user))
@@ -148,7 +147,7 @@ export class IGClient
       }
       catch(e)
       {
-        lg.error({ post_image_error, e })
+        lg.error({ post_image_error: e })
       }
     else
       lg.error({ Error: "No media" })
@@ -165,7 +164,8 @@ export class IGClient
     for (let i = 0; i < 10; i++)
       items.push({ file: await ReadFile(await CreateImage(strings[i], `page${i + 1}`)), width: 1080, height: 1080 })
     lg.debug({ ToPost: items })
-    return await this.ig.publish.album({ caption, items }) != undefined
+    // return await this.ig.publish.album({ caption, items }) != undefined
+    return false
   }
   //-----------------
   private async try_big_post() : Promise<boolean>
