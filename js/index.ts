@@ -4,15 +4,9 @@ import type { request } from './util'
 import lg from './logger'
 const { poll, OnResult } = bindings('kgramIPC')
 const client     = new IGClient()
-let tested : boolean = false
-//----------------------------------
+//-------------MAIN-----------------
 setInterval(() => poll(async (msg: request) =>
 {
-  if (!tested)
-  {
-    await client.test()
-    tested = true
-  }
   let result = false
   lg.info('Waiting for requests')
   try

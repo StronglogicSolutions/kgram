@@ -3,7 +3,7 @@ import { IgApiClient } from 'instagram-private-api';
 import { GetURLS, GetCredentials, GetMapString, GetMime, IsVideo,
          FetchFile, ReadFile, usermap, request, FormatVideo, FormatImage,
          CreateImage, FormatLongPost, make_post_from_thread} from './util'
-import { example_posts } from './testdata'
+
 interface ClientInfo { Status: string, IGUsers: string }
 
 const vid_path         : string    = 'temp/Formatted.mp4'
@@ -171,7 +171,7 @@ export class IGClient
     const num     = (strings.length < 10) ? strings.length : 10
 
     for (let i = 0; i < num; i++)
-      items.push({ file: await ReadFile(await CreateImage(strings[i], `page${i + 1}.png`)), width: 1080, height: 1080 })
+      items.push({ file: await ReadFile(await CreateImage(strings[i], `page${i + 1}.jpg`)), width: 1080, height: 1080 })
     return await this.ig.publish.album({ caption, items }) != undefined
   }
   //-----------------
@@ -190,16 +190,6 @@ export class IGClient
 
     lg.debug({ NoPost: "no media and threads to post" })
     return false
-  }
-
-  public async test() : Promise<void>
-  {
-    this.rx_req = make_reqs(example_posts)
-    this.set_user("DEFAULT_USER")
-    if (await this.login())
-      await this.try_big_post()
-    else
-      lg.error("Failed to login")
   }
 
   private name    : string
