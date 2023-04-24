@@ -171,7 +171,7 @@ export class IGClient
     const num     = (strings.length < 10) ? strings.length : 10
 
     for (let i = 0; i < num; i++)
-      items.push({ file: await ReadFile(await CreateImage(strings[i], `page${i + 1}`)), width: 1080, height: 1080 })
+      items.push({ file: await ReadFile(await CreateImage(strings[i], `page${i + 1}.png`)), width: 1080, height: 1080 })
     lg.debug({ ToPost: items })
     return await this.ig.publish.album({ caption, items }) != undefined
   }
