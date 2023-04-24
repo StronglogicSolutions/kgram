@@ -57,7 +57,6 @@ export class IGClient
   //------------------
   private async login() : Promise<boolean>
   {
-    lg.debug("login")
     if (this.igusers.has(this.user))
     {
       lg.warn("This user already failed to login")
@@ -71,7 +70,6 @@ export class IGClient
       lg.info({ username: account.username, id: account.pk })
       if (account && this.igusers.set(this.user, account))
       {
-        lg.debug("Returning true")
         return true
       }
     }
@@ -79,6 +77,7 @@ export class IGClient
     {
       lg.error({ login_error: e })
     }
+
     lg.warn("Setting user as false to prevent login flood")
     this.igusers.set(this.user, false)
 
@@ -165,14 +164,14 @@ export class IGClient
   private async post_generated_text(text : string) : Promise<boolean>
   {
     const strings = FormatLongPost(text)
-    lg.debug({ LongPost: strings })
     const items   = []
     const caption = (text.length > 2200)  ? text.substring(0, 2200) : text
     const num     = (strings.length < 10) ? strings.length : 10
 
     for (let i = 0; i < num; i++)
       items.push({ file: await ReadFile(await CreateImage(strings[i], `page${i + 1}.jpg`)), width: 1080, height: 1080 })
-    return await this.ig.publish.album({ caption, items }) != undefined
+    return (items.length > 0 && items[0] &&
+            await this.ig.publish.album({ caption, items }) != undefined)
   }
   //-----------------
   private async try_big_post() : Promise<boolean>
