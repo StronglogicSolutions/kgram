@@ -4,14 +4,20 @@ import { GetURLS, GetCredentials, GetMapString, GetMime, IsVideo,
          FetchFile, ReadFile, usermap, request, FormatVideo, FormatImage,
          CreateImage, FormatLongPost, make_post_from_thread} from './util'
 
-interface ErrorName  { Error : string }
 interface ClientInfo { Status: string, IGUsers: string }
 
-const post_image_error : ErrorName = { Error: "IGClient::post_image()" }
-const login_error      : ErrorName = { Error: "IGClient::login()" }
 const vid_path         : string    = 'temp/Formatted.mp4'
 const prev_path        : string    = 'temp/preview.jpg'
 const client_name      : string    = "Instagram Client"
+
+const make_reqs = posts =>
+{
+  const reqs = []
+  let i = 0
+  for (const post of posts)
+    reqs.push({text: post, time: i++})
+  return reqs
+}
 
 //----------------------------------
 export class IGClient
@@ -51,18 +57,31 @@ export class IGClient
   //------------------
   private async login() : Promise<boolean>
   {
+    lg.debug("login")
+    if (this.igusers.has(this.user) && !this.igusers.get(this.user))
+    {
+      lg.warn("This user already failed to login")
+      return false
+    }
+
     this.ig.state.generateDevice(this.user)
     try
     {
       const account = await this.ig.account.login(this.user, this.pass)
       lg.info({ username: account.username, id: account.pk })
       if (account && this.igusers.set(this.user, account))
+      {
+        lg.debug("Returning true")
         return true
+      }
     }
     catch (e)
     {
-      lg.error({ login_error ,e })
+      lg.error({ login_error: e })
     }
+    lg.warn("Setting user as false to prevent login flood")
+    this.igusers.set(this.user, false)
+
     return false
   }
   //------------------
@@ -73,14 +92,17 @@ export class IGClient
     if (!this.user || !this.pass)
       throw new Error("Credentials not set")
 
-    if (!this.igusers.has(this.user) && !await this.login())
-      return false
-
     if (!req.urls)
     {
+      lg.debug("Adding post with no media to queue in case it's a thread")
       this.rx_req.push(req);
       return await this.try_big_post()
     }
+
+    const user_logged_in = !this.igusers.get(this.user)
+    lg.debug({ user_logged_in })
+    if (!user_logged_in && !await this.login())
+      return false
 
     if (this.igusers.has(this.user))
     {
@@ -133,7 +155,7 @@ export class IGClient
       }
       catch(e)
       {
-        lg.error({ post_image_error, e })
+        lg.error({ post_image_error: e })
       }
     else
       lg.error({ Error: "No media" })
@@ -143,12 +165,14 @@ export class IGClient
   private async post_generated_text(text : string) : Promise<boolean>
   {
     const strings = FormatLongPost(text)
+    lg.debug({ LongPost: strings })
     const items   = []
-    const caption = (text.length > 2200) ? text.substring(0, 2200) : text
+    const caption = (text.length > 2200)  ? text.substring(0, 2200) : text
+    const num     = (strings.length < 10) ? strings.length : 10
 
-    for (let i = 0; i < 10; i++)
+    for (let i = 0; i < num; i++)
       items.push({ file: await ReadFile(await CreateImage(strings[i], `page${i + 1}`)), width: 1080, height: 1080 })
-
+    lg.debug({ ToPost: items })
     return await this.ig.publish.album({ caption, items }) != undefined
   }
   //-----------------

@@ -56,6 +56,8 @@ server::server()
 
   future_ = std::async(std::launch::async, [this] { run(); });
   kutils::log("Server listening on ", RX_ADDR);
+
+  kiq::set_log_fn([](const char* message) { kutils::log(message);} );
 }
 //----------------------------------
 server::~server()
@@ -140,8 +142,8 @@ void server::recv()
     more_flag = rx_.get(zmq::sockopt::rcvmore);
     buffer.push_back({static_cast<char*>(msg.data()), static_cast<char*>(msg.data()) + msg.size()});
   }
-
   ipc_msg_t  ipc_msg = DeserializeIPCMessage(std::move(buffer));
+  kutils::log("Message type is ", std::to_string(ipc_msg->type()).c_str());
   const auto decoded = static_cast<platform_message*>(ipc_msg.get());
   if (is_duplicate(decoded))
   {
