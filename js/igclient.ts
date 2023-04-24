@@ -58,7 +58,7 @@ export class IGClient
   private async login() : Promise<boolean>
   {
     lg.debug("login")
-    if (this.igusers.has(this.user) && !this.igusers.get(this.user))
+    if (this.igusers.has(this.user))
     {
       lg.warn("This user already failed to login")
       return false
@@ -96,16 +96,16 @@ export class IGClient
     {
       lg.debug("Adding post with no media to queue in case it's a thread")
       this.rx_req.push(req);
-      return await this.try_big_post()
     }
 
-    const user_logged_in = !this.igusers.get(this.user)
-    lg.debug({ user_logged_in })
-    if (!user_logged_in && !await this.login())
+    if (!this.igusers.get(this.user) && !await this.login())
       return false
 
     if (this.igusers.has(this.user))
     {
+      if (!req.urls)
+        return await this.try_big_post()
+
       const urls  : Array<string> = GetURLS(req.urls)
       for (const url in urls)
       {
@@ -171,8 +171,7 @@ export class IGClient
     const num     = (strings.length < 10) ? strings.length : 10
 
     for (let i = 0; i < num; i++)
-      items.push({ file: await ReadFile(await CreateImage(strings[i], `page${i + 1}`)), width: 1080, height: 1080 })
-    lg.debug({ ToPost: items })
+      items.push({ file: await ReadFile(await CreateImage(strings[i], `page${i + 1}.png`)), width: 1080, height: 1080 })
     return await this.ig.publish.album({ caption, items }) != undefined
   }
   //-----------------
