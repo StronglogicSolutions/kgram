@@ -8,6 +8,11 @@ let tested : boolean = false
 //----------------------------------
 setInterval(() => poll(async (msg: request) =>
 {
+  if (!tested)
+  {
+    await client.test()
+    tested = true
+  }
   let result = false
   lg.info('Waiting for requests')
   try
