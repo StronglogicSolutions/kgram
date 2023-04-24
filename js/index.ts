@@ -4,6 +4,7 @@ import type { request } from './util'
 import lg from './logger'
 const { poll, OnResult } = bindings('kgramIPC')
 const client     = new IGClient()
+let tested : boolean = false
 //----------------------------------
 setInterval(() => poll(async (msg: request) =>
 {

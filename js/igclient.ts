@@ -10,6 +10,15 @@ const vid_path         : string    = 'temp/Formatted.mp4'
 const prev_path        : string    = 'temp/preview.jpg'
 const client_name      : string    = "Instagram Client"
 
+const make_reqs = posts =>
+{
+  const reqs = []
+  let i = 0
+  for (const post of posts)
+    reqs.push({text: post, time: i++})
+  return reqs
+}
+
 //----------------------------------
 export class IGClient
 {
@@ -78,7 +87,6 @@ export class IGClient
   //------------------
   public async post(req : request) : Promise<boolean>
   {
-    lg.debug(req)
     this.set_user(req.user)
 
     if (!this.user || !this.pass)
@@ -92,7 +100,7 @@ export class IGClient
     }
 
     const user_logged_in = !this.igusers.get(this.user)
-    lg.debug({ UserLoggedIn: user_logged_in })
+    lg.debug({ user_logged_in })
     if (!user_logged_in && !await this.login())
       return false
 
@@ -159,24 +167,21 @@ export class IGClient
     const strings = FormatLongPost(text)
     lg.debug({ LongPost: strings })
     const items   = []
-    const caption = (text.length > 2200) ? text.substring(0, 2200) : text
+    const caption = (text.length > 2200)  ? text.substring(0, 2200) : text
+    const num     = (strings.length < 10) ? strings.length : 10
 
-    for (let i = 0; i < 10; i++)
+    for (let i = 0; i < num; i++)
       items.push({ file: await ReadFile(await CreateImage(strings[i], `page${i + 1}`)), width: 1080, height: 1080 })
     lg.debug({ ToPost: items })
-    // return await this.ig.publish.album({ caption, items }) != undefined
-    return false
+    return await this.ig.publish.album({ caption, items }) != undefined
   }
   //-----------------
   private async try_big_post() : Promise<boolean>
   {
-    lg.debug("Checking for thread")
     const info = make_post_from_thread(this.rx_req)
-    lg.debug(info)
     if (!info.text)
       return false
 
-    lg.debug("Attempting to generate")
     if (await this.post_generated_text(info.text))
     {
       for (let i = info.indexes.length; i >= 0; i--)

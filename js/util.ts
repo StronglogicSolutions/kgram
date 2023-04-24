@@ -18,9 +18,10 @@ gm.subClass({ imageMagick: true })
 //---------------------------------
 //----------CONSTANTS--------------
 //---------------------------------
-const center    : string = "Center"
-const nib_size  : number = 550
-const not_found : number = -1
+const center      : string      = "Center"
+const nib_size    : number      = 550
+const not_found   : number      = -1
+const fail_result : thread_info = { text: "", indexes: []}
 
 //---------------------------------
 //----------TYPES------------------
@@ -305,8 +306,8 @@ export function FormatLongPost(input : string, clean_text : boolean = true) : Ar
 }
 
 //----------------------------------
-const is_newer   = (a, b) => { console.log('comparing ', a, ' and ', b); return a > b }
-const is_thread  = (text) => { const is_thread = (text.endsWith("../") || text.endsWith(".../")); console.log(is_thread); return is_thread }
+const is_newer   = (a, b) => { return a > b }
+const is_thread  = (text) => { return (text.endsWith("../") || text.endsWith(".../")) }
 const is_end     = (text) => { return (text.endsWith('fin')) }
 const find_start = (r) =>
 {
@@ -328,9 +329,10 @@ export const make_post_from_thread = (reqs) : thread_info =>
 
   info.indexes.push(idx)
 
-  const last                  = reqs[idx]
-  const posts : Array<string> = [sanitize(last.text)]
-  let   time                  = last.time
+  const last                    = reqs[idx]
+  const posts   : Array<string> = [sanitize(last.text)]
+  let   time                    = last.time
+  let   has_end : boolean       = false
 
   idx++
 
@@ -345,11 +347,14 @@ export const make_post_from_thread = (reqs) : thread_info =>
     else if (is_end(req.text))
     {
       info.indexes.push(idx++)
+      posts.push(sanitize(req.text))
+      has_end = true
       break
     }
   }
 
-  info.text = (posts.length > 1) ? posts.join('\n') : ""
+  if (posts.length < 2 || !has_end)
+    return fail_result
 
-  return info
+  return { ...info, text: posts.join('\n')}
 }
