@@ -266,6 +266,7 @@ export async function CreateImage(text : string, name = "generated.png") : Promi
     if (stderr)
       lg.error(stderr)
     r()
+    name = ""
   })
 
   await p
@@ -274,7 +275,6 @@ export async function CreateImage(text : string, name = "generated.png") : Promi
 //----------------------------------
 export function FormatLongPost(input : string, clean_text : boolean = true) : Array<string>
 {
-  lg.trace({ Formatting: input })
   const chunks = []
   const text = (clean_text) ? sanitize(input) : input
   for (let i = 0, read = 0; read < text.length;)
