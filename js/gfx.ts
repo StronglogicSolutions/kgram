@@ -34,11 +34,10 @@ export const validate_aspect_ratio = (ratio : vcoord) =>
 // ~ 650 character limit @ 24pt
 export const make_caption_command = (text, file) => // size should be 1058.8235
 {
-  const size = (text.length > 650) ? 16  : (text.length > 250) ? 24 : 48
-  const swdt = (text.length < 650) ? 0.5 : 0.15
-  return `convert -size "1058x1058" -background "#333" -fill "#D3D3D3" -font "Ubuntu-Mono" -interword-spacing 4 \
-          -kerning 4 -pointsize ${size} -border 1%x1% -bordercolor "#333" -gravity Center -interline-spacing 24 -stroke "#FEFEFE"\
-          -strokewidth ${swdt} caption:\"${text}\" ${file}` }
+  const size = (text.length > 400) ? 24  : (text.length > 250) ? 28 : 48
+  const swdt = (text.length < 300) ? 0.5 : 0.15
+  return `convert -size "1058x1058" -background "#000" -fill "#D3D3D3" -font "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf" -interword-spacing 4 -kerning 4 -pointsize ${size} -border 2%x2% -bordercolor "#333" -gravity Center -interline-spacing 24 -stroke "#FEFEFE" -strokewidth ${swdt} caption:\"${text}\" ${file}`
+}
 //----------------------------------
 export function FindBestSize(size : dimensions) : image_style
 {
