@@ -19,7 +19,7 @@ gm.subClass({ imageMagick: true })
 //----------CONSTANTS--------------
 //---------------------------------
 const center      : string      = "Center"
-const nib_size    : number      = 550
+const nib_size    : number      = 400
 const not_found   : number      = -1
 const fail_result : thread_info = { text: "", indexes: []}
 
@@ -255,8 +255,8 @@ export async function FormatImage(file : string, out : string = 'temp.jpg') : Pr
 //----------------------------------
 export async function CreateImage(text : string, name = "generated.png") : Promise<string>
 {
-  let   r    = undefined
-  const p    = new Promise(resolve => r = resolve)
+  let   r = undefined
+  const p = new Promise(resolve => r = resolve)
 
   exec(make_caption_command(text, name), (error, stdout, stderr) =>
   {
@@ -266,7 +266,6 @@ export async function CreateImage(text : string, name = "generated.png") : Promi
     if (stderr)
       lg.error(stderr)
     r()
-    name = ""
   })
 
   await p
