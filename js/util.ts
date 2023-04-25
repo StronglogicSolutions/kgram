@@ -338,18 +338,17 @@ export const make_post_from_thread = (reqs) : thread_info =>
   for (const req of reqs.slice(idx))
   {
     if      (is_newer(req.time, time) && is_thread(req.text))
-    {
       time = req.time
-      posts.push(sanitize(req.text))
-      info.indexes.push(idx++)
-    }
     else if (is_end(req.text))
     {
-      info.indexes.push(idx++)
-      posts.push(sanitize(req.text))
       has_end = true
       break
     }
+    else
+      continue
+
+    info.indexes.push(idx++)
+    posts.push(sanitize(req.text))
   }
 
   if (posts.length < 2 || !has_end)
