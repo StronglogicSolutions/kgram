@@ -266,7 +266,6 @@ export async function CreateImage(text : string, name = "generated.png") : Promi
     if (stderr)
       lg.error(stderr)
     r()
-    name = ""
   })
 
   await p
