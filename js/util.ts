@@ -255,8 +255,8 @@ export async function FormatImage(file : string, out : string = 'temp.jpg') : Pr
 //----------------------------------
 export async function CreateImage(text : string, name = "generated.png") : Promise<string>
 {
-  let   r    = undefined
-  const p    = new Promise(resolve => r = resolve)
+  let   r = undefined
+  const p = new Promise(resolve => r = resolve)
 
   exec(make_caption_command(text, name), (error, stdout, stderr) =>
   {

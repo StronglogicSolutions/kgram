@@ -36,7 +36,7 @@ export const make_caption_command = (text, file) => // size should be 1058.8235
 {
   const size = (text.length > 400) ? 24  : (text.length > 250) ? 28 : 48
   const swdt = (text.length < 300) ? 0.5 : 0.15
-  return `convert -size "1058x1058" -background "#000" -fill "#D3D3D3" -font "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf" -interword-spacing 4 -kerning 4 -pointsize ${size} -border 2%x2% -bordercolor "#333" -gravity Center -interline-spacing 24 -stroke "#FEFEFE" -strokewidth ${swdt} caption:\"${text}\" ${file}`
+  return `convert -size "1058x1058" -background "#1E1E1E" -fill "#DFDFDF" -font "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf" -interword-spacing 4 -kerning 4 -pointsize ${size} -border 2%x2% -bordercolor "#1E1E1E" -gravity Center -interline-spacing 24 -stroke "#FEFEFE" -strokewidth ${swdt} caption:\"${text}\" ${file}`
 }
 //----------------------------------
 export function FindBestSize(size : dimensions) : image_style
