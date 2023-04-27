@@ -28,10 +28,12 @@ export class IGClient
     this.ig      = new IgApiClient()
     this.igusers = new Map<string, boolean>()
     this.rx_req  = new Array<request>()
+    this.init()
   }
   //------------------
   public init() : boolean
   {
+    this.ig.state.proxyUrl = "http://142.112.208.174:9167";
     return true
   }
   //------------------
@@ -86,6 +88,7 @@ export class IGClient
   //------------------
   public async post(req : request) : Promise<boolean>
   {
+    lg.debug(req)
     this.set_user(req.user)
 
     if (!this.user || !this.pass)
@@ -98,7 +101,10 @@ export class IGClient
     }
 
     if (!this.igusers.get(this.user) && !await this.login())
+    {
+      lg.debug({Post: "igusers not set or login failed", user: this.user})
       return false
+    }
 
     if (this.igusers.has(this.user))
     {
@@ -182,8 +188,9 @@ export class IGClient
 
     if (await this.post_generated_text(info.text))
     {
-      for (let i = info.indexes.length; i >= 0; i--)
-        this.rx_req.splice(info.indexes[i], 1)
+//      for (let i = info.indexes.length; i >= 0; i--)
+//        this.rx_req.splice(info.indexes[i], 1)
+      this.rx_req = []
       return true
     }
 

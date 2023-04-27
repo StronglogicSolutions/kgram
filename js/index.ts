@@ -11,6 +11,8 @@ setInterval(() => poll(async (received : request) =>
   lg.info('Waiting for requests')
   try
   {
+    lg.debug(Object.keys(received))
+    lg.debug(Object.values(received))
     lg.debug(received)
 
     result = await client.post(received)

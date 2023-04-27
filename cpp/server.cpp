@@ -9,6 +9,7 @@ namespace kiq
 node_obj_t req_to_node_obj(request_t req, node_env_t& env)
 {
   node_obj_t obj = node_obj_t::New(env);
+  kutils::log("req_to_node_obj: ", req.time.c_str());
   obj.Set("user", req.user);
   obj.Set("text", req.text);
   obj.Set("urls", req.media);
@@ -29,6 +30,7 @@ request_t request_converter::receive(ipc_msg_t msg)
 void request_converter::on_request(ipc_msg_t msg)
 {
   platform_message* ipc_msg = static_cast<platform_message*>(msg.get());
+  kutils::log("on_request: ", ipc_msg->time().c_str());
   req.text  = ipc_msg->content();
   req.user  = ipc_msg->user();
   req.media = ipc_msg->urls();
@@ -140,16 +142,17 @@ void server::recv()
   while (more_flag && rx_.recv(msg))
   {
     more_flag = rx_.get(zmq::sockopt::rcvmore);
+    kutils::log("Received frame: ", msg.to_string().c_str());
     buffer.push_back({static_cast<char*>(msg.data()), static_cast<char*>(msg.data()) + msg.size()});
   }
   ipc_msg_t  ipc_msg = DeserializeIPCMessage(std::move(buffer));
   kutils::log("Message type is ", std::to_string(ipc_msg->type()).c_str());
   const auto decoded = static_cast<platform_message*>(ipc_msg.get());
-  if (is_duplicate(decoded))
-  {
-    kutils::log("Ignoring duplicate IPC message");
-    return;
-  }
+//  if (is_duplicate(decoded))
+//  {
+//    kutils::log("Ignoring duplicate IPC message");
+//    return;
+//  }
 
   processed_.push_back(decoded->id());
   msgs_.push_back(std::move(ipc_msg));
