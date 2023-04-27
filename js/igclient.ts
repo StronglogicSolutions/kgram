@@ -88,8 +88,11 @@ export class IGClient
   //------------------
   public async post(req : request) : Promise<boolean>
   {
-    lg.debug(req)
+    console.log(req)
     this.set_user(req.user)
+
+    if (!req.time)
+      throw new Error("Request has no time, but made its way into IGClient::post() somehow")
 
     if (!this.user || !this.pass)
       throw new Error("Credentials not set")
