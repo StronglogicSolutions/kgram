@@ -63,7 +63,7 @@ const sanitize = (s : string) => s.replace(/\.\.\.\//g, '').replace(/\.\.\//g, '
 //---------------------------------
 export function GetURLS(s: string) : Array<string>
 {
-  return (s.length > 0) ? s.split('>').filter(u => u) : []
+  return (s.length > 0) ? s.split('>')
 }
 
 //---------------------------------
