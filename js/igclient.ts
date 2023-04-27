@@ -115,8 +115,10 @@ export class IGClient
         return await this.try_big_post()
 
       const urls  : Array<string> = GetURLS(req.urls)
+      console.log('urls is ', urls)
       for (const url in urls)
       {
+        console.log('iterating URL', url)
         if (IsVideo(GetMime(url)))
           return await this.do_post(req.text, url, true)
       }
