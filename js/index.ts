@@ -4,6 +4,24 @@ import type { request } from './util'
 import lg from './logger'
 const { poll, OnResult } = bindings('kgramIPC')
 const client     = new IGClient()
+
+const verify_and_pass = ( msg : request ) =>
+{
+  lg.debug(Object.keys  (msg))
+  lg.debug(Object.values(msg))
+
+  const formalized : request = {
+    time: msg.time,
+    text: msg.text,
+    urls: msg.urls,
+    user: msg.user
+  }
+
+  if (!formalized.time)
+    throw new Error("Request missing time value")
+  return formalized
+}
+
 //-------------MAIN-----------------
 setInterval(() => poll(async (received : request) =>
 {
@@ -11,11 +29,7 @@ setInterval(() => poll(async (received : request) =>
   lg.info('Waiting for requests')
   try
   {
-    lg.debug(Object.keys(received))
-    lg.debug(Object.values(received))
-    lg.debug(received)
-
-    result = await client.post(received)
+    result = await client.post(verify_and_pass(received))
     if (result)
       lg.info('Success')
     else
