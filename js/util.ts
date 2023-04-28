@@ -45,7 +45,6 @@ export interface request
   text:  string
   urls:  string
   time:  string
-  media: Array<string>
 }
 //----------------------------------
 interface thread_info
