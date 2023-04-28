@@ -3,22 +3,11 @@ import { IgApiClient } from 'instagram-private-api';
 import { GetURLS, GetCredentials, GetMapString, GetMime, IsVideo,
          FetchFile, ReadFile, usermap, request, FormatVideo, FormatImage,
          CreateImage, FormatLongPost, make_post_from_thread} from './util'
-
 interface ClientInfo { Status: string, IGUsers: string }
 
-const vid_path         : string    = 'temp/Formatted.mp4'
-const prev_path        : string    = 'temp/preview.jpg'
-const client_name      : string    = "Instagram Client"
-
-const make_reqs = posts =>
-{
-  const reqs = []
-  let i = 0
-  for (const post of posts)
-    reqs.push({text: post, time: i++})
-  return reqs
-}
-
+const vid_path    : string = 'temp/Formatted.mp4'
+const prev_path   : string = 'temp/preview.jpg'
+const client_name : string = "Instagram Client"
 //----------------------------------
 export class IGClient
 {
@@ -106,7 +95,7 @@ export class IGClient
         return await this.try_big_post()
 
       const urls  : Array<string> = GetURLS(req.urls)
-      for (const url in urls)
+      for (const url of urls)
       {
         if (IsVideo(GetMime(url)))
           return await this.do_post(req.text, url, true)
@@ -138,7 +127,7 @@ export class IGClient
     }
     catch (e)
     {
-      lg.error({ Error: "post_video", Exception: e })
+      lg.error({Exception: e })
       throw e
     }
   }
@@ -187,7 +176,7 @@ export class IGClient
       return true
     }
 
-    lg.debug({ NoPost: "no media and threads to post" })
+    lg.warn("No big post")
     return false
   }
 

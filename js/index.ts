@@ -3,7 +3,8 @@ import { IGClient } from "./igclient"
 import type { request } from './util'
 import lg from './logger'
 const { poll, OnResult } = bindings('kgramIPC')
-const client     = new IGClient()
+const client = new IGClient()
+
 //-------------MAIN-----------------
 setInterval(() => poll(async (received : request) =>
 {
