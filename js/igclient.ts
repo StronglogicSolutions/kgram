@@ -80,7 +80,8 @@ export class IGClient
     if (!this.user || !this.pass)
       throw new Error("Credentials not set")
 
-    if (is_thread_start(req) || !req.urls)
+    const thread_start = is_thread_start(req)
+    if (thread_start || !req.urls)
     {
       lg.debug("Adding post to queue in case of thread")
       this.rx_req.push(req);
@@ -91,7 +92,7 @@ export class IGClient
 
     if (this.igusers.has(this.user))
     {
-      if (!req.urls)
+      if (thread_start || !req.urls)
         return await this.try_big_post()
 
       const urls : Array<string> = GetURLS(req.urls)
