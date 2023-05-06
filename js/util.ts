@@ -21,7 +21,7 @@ gm.subClass({ imageMagick: true })
 const center      : string      = "Center"
 const nib_size    : number      = 400
 const not_found   : number      = -1
-const fail_result : thread_info = { text: "", indexes: []}
+const fail_result : thread_info = { text: "", indexes: [], url: ""}
 
 //---------------------------------
 //----------TYPES------------------
@@ -50,6 +50,7 @@ export interface request
 interface thread_info
 {
   text    : string
+  url     : string
   indexes : Array<number>
 }
 
@@ -315,19 +316,23 @@ const find_start = (r) =>
   return -1
 }
 const is_start   = (text) => { return text.startsWith("🧵") }
-export const is_thread_start = (text) => { return is_start(text) }
+export const is_thread_start = (r) => { return is_start(r.text) }
 //----------------------------------
 export const make_post_from_thread = (reqs) : thread_info =>
 {
-  reqs.sort((a, b) => { return a.time < b.time })
+  reqs.sort((a : request, b : request) => { return a.time < b.time })
 
-  const info : thread_info = { text: "", indexes: [] }
+  const info : thread_info = { text: "", indexes: [], url: "" }
   let   idx = find_start(reqs)
 
   if (idx === not_found)
     return info
 
   info.indexes.push(idx)
+
+  const urls = GetURLS(reqs[idx].urls)
+  if (urls.length && urls[0])
+    info.url = urls[0]
 
   const last                    = reqs[idx]
   const posts   : Array<string> = [sanitize(last.text)]
