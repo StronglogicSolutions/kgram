@@ -310,10 +310,12 @@ const is_end     = (text) => { return (text.endsWith('fin')) }
 const find_start = (r) =>
 {
   for (let i = 0; i < r.length; i++)
-    if (r[i].text.startsWith("🧵"))
+    if (is_start(r[i].text))
       return i
   return -1
 }
+const is_start   = (text) => { return text.startsWith("🧵") }
+export const is_thread_start = (text) => { return is_start(text) }
 //----------------------------------
 export const make_post_from_thread = (reqs) : thread_info =>
 {
