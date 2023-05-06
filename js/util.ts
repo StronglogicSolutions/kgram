@@ -44,7 +44,7 @@ export interface request
   user:  string
   text:  string
   urls:  string
-  time:  string
+  time:  string | number
 }
 //----------------------------------
 interface thread_info
@@ -211,12 +211,14 @@ export async function GetImageSize(file : string) : Promise <dimensions>
   const image = gm(file)
   return new Promise(r => image.size((err, info) => r({ width: info.width, height: info.height })))
 }
+//----------------------------------
 interface ig_image_info
 {
   file   : Buffer,
   width  : number,
   height : number
 }
+//----------------------------------
 export async function IGImageFromURL(url : string) : Promise<ig_image_info>
 {
   const image = await FormatImage(await FetchFile(url))
@@ -312,18 +314,19 @@ export function FormatLongPost(input : string, clean_text : boolean = true) : Ar
 }
 
 //----------------------------------
-const is_newer   = (a, b) => { return a > b }
-const is_thread  = (text) => { return (text.endsWith("../") || text.endsWith(".../")) }
-const is_end     = (text) => { return (text.endsWith('fin')) }
-const find_start = (r) =>
+export
+const is_thread_start = (r)    => { return is_start(r.text) }
+const is_newer        = (a, b) => { return a > b }
+const is_thread       = (text) => { return (text.endsWith("../") || text.endsWith(".../")) }
+const is_end          = (text) => { return (text.endsWith('fin')) }
+const is_start        = (text) => { return (text.startsWith("🧵")) }
+const find_start      = (r)    =>
 {
   for (let i = 0; i < r.length; i++)
     if (is_start(r[i].text))
       return i
   return -1
 }
-const is_start   = (text) => { return text.startsWith("🧵") }
-export const is_thread_start = (r) => { return is_start(r.text) }
 //----------------------------------
 export const make_post_from_thread = (reqs) : thread_info =>
 {

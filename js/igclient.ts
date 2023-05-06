@@ -94,7 +94,7 @@ export class IGClient
       if (!req.urls)
         return await this.try_big_post()
 
-      const urls  : Array<string> = GetURLS(req.urls)
+      const urls : Array<string> = GetURLS(req.urls)
       for (const url of urls)
       {
         if (IsVideo(GetMime(url)))
