@@ -2,7 +2,7 @@ import lg from './logger'
 import { IgApiClient } from 'instagram-private-api';
 import { GetURLS, GetCredentials, GetMapString, GetMime, IsVideo,
          FetchFile, ReadFile, usermap, request, FormatVideo, FormatImage,
-         CreateImage, FormatLongPost, make_post_from_thread} from './util'
+         CreateImage, FormatLongPost, IGImageFromURL, make_post_from_thread, is_thread_start} from './util'
 interface ClientInfo { Status: string, IGUsers: string }
 
 const vid_path    : string = 'temp/Formatted.mp4'
@@ -80,9 +80,10 @@ export class IGClient
     if (!this.user || !this.pass)
       throw new Error("Credentials not set")
 
-    if (!req.urls)
+    const thread_start = is_thread_start(req)
+    if (thread_start || !req.urls)
     {
-      lg.debug("Adding post with no media to queue in case it's a thread")
+      lg.debug("Adding post to queue in case of thread")
       this.rx_req.push(req);
     }
 
@@ -91,10 +92,10 @@ export class IGClient
 
     if (this.igusers.has(this.user))
     {
-      if (!req.urls)
+      if (thread_start || !req.urls)
         return await this.try_big_post()
 
-      const urls  : Array<string> = GetURLS(req.urls)
+      const urls : Array<string> = GetURLS(req.urls)
       for (const url of urls)
       {
         if (IsVideo(GetMime(url)))
@@ -150,12 +151,15 @@ export class IGClient
     return false
   }
   //-----------------
-  private async post_generated_text(text : string) : Promise<boolean>
+  private async post_generated_text(text : string, url : string = "") : Promise<boolean>
   {
     const strings = FormatLongPost(text)
     const items   = []
     const caption = (text.length > 2200)  ? text.substring(0, 2200) : text
     const num     = (strings.length < 10) ? strings.length : 10
+
+    if (url)
+      items.push(IGImageFromURL(url))
 
     for (let i = 0; i < num; i++)
       items.push({ file: await ReadFile(await CreateImage(strings[i], `page${i + 1}.jpg`)), width: 1080, height: 1080 })
@@ -169,7 +173,7 @@ export class IGClient
     if (!info.text)
       return false
 
-    if (await this.post_generated_text(info.text))
+    if (await this.post_generated_text(info.text, info.url))
     {
       for (let i = info.indexes.length; i >= 0; i--)
         this.rx_req.splice(info.indexes[i], 1)
