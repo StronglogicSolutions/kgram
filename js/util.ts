@@ -8,7 +8,7 @@ import ffmpeg from 'ffmpeg'
 import mime from 'mime/lite'
 import gm from 'gm'
 import { exec } from 'child_process'
-import { make_caption_command, validate_aspect_ratio, FindBestSize, GetExtent } from './gfx'
+import { make_caption_command, dimensions, validate_aspect_ratio, FindBestSize, GetExtent } from './gfx'
 
 //---------------------------------
 //----------INIT-------------------
@@ -206,28 +206,35 @@ export async function ReadFile(filepath : string) : Promise<Buffer>
   return buffer
 }
 //----------------------------------
+export async function GetImageSize(file : string) : Promise <dimensions>
+{
+  const image = gm(file)
+  return new Promise(r => image.size((err, info) => r({ width: info.width, height: info.height })))
+}
+interface ig_image_info
+{
+  file   : Buffer,
+  width  : number,
+  height : number
+}
+export async function IGImageFromURL(url : string) : Promise<ig_image_info>
+{
+  const image = await FormatImage(await FetchFile(url))
+  const size  = await GetImageSize(image)
+  return { file: await ReadFile(image), width: size.width, height: size.height }
+}
+//----------------------------------
 export async function FormatImage(file : string, out : string = 'temp.jpg') : Promise<string>
 {
-  let   r1, r2    = undefined
+  let   r         = undefined
   let   path      = file
-  const p1        = new Promise(resolve => r1 = resolve)
-  const p2        = new Promise(resolve => r2 = resolve)
+  const p         = new Promise(resolve => r = resolve)
   const data      = gm(file)
   const mime_data = GetMime(file)
-  const orig_size = { width: 0, height: 0 }
-
-  data.size((err, info) =>
-  {
-    orig_size.width  = info.width
-    orig_size.height = info.height
-    r1()
-  })
-
-  await p1
-
-  const style  = FindBestSize(orig_size)
-  const size   = style.size
-  const extent = GetExtent(style.type)
+  const orig_size = await GetImageSize(file)
+  const style     = FindBestSize(orig_size)
+  const size      = style.size
+  const extent    = GetExtent(style.type)
 
   lg.info({BestSize: size})
 
@@ -246,10 +253,10 @@ export async function FormatImage(file : string, out : string = 'temp.jpg') : Pr
       lg.info("Image formatting complete")
       file = path
     }
-    r2()
+    r()
   })
 
-  await p2
+  await p
   return file
 }
 //----------------------------------

@@ -2,7 +2,7 @@ import lg from './logger'
 import { IgApiClient } from 'instagram-private-api';
 import { GetURLS, GetCredentials, GetMapString, GetMime, IsVideo,
          FetchFile, ReadFile, usermap, request, FormatVideo, FormatImage,
-         CreateImage, FormatLongPost, make_post_from_thread, is_thread_start} from './util'
+         CreateImage, FormatLongPost, IGImageFromURL, make_post_from_thread, is_thread_start} from './util'
 interface ClientInfo { Status: string, IGUsers: string }
 
 const vid_path    : string = 'temp/Formatted.mp4'
@@ -158,7 +158,7 @@ export class IGClient
     const num     = (strings.length < 10) ? strings.length : 10
 
     if (url)
-      items.push({ file: await ReadFile(await FormatImage(await FetchFile(url))) }) // NEED TO GET SIZE
+      items.push(IGImageFromURL(url))
 
     for (let i = 0; i < num; i++)
       items.push({ file: await ReadFile(await CreateImage(strings[i], `page${i + 1}.jpg`)), width: 1080, height: 1080 })
