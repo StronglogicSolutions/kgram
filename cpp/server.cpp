@@ -9,10 +9,11 @@ namespace kiq
 node_obj_t req_to_node_obj(request_t req, node_env_t& env)
 {
   node_obj_t obj = node_obj_t::New(env);
-  obj.Set("user", req.user);
-  obj.Set("text", req.text);
+  obj.Set("user", req.user );
+  obj.Set("text", req.text );
   obj.Set("urls", req.media);
-  obj.Set("time", req.time);
+  obj.Set("time", req.time );
+  obj.Set("q"   , req.query);
   return obj;
 }
 //-------------------------------------------------------------
@@ -33,6 +34,14 @@ void request_converter::on_request(ipc_msg_t msg)
   req.user  = ipc_msg->user();
   req.media = ipc_msg->urls();
   req.time  = ipc_msg->time();
+  req.query = "";
+}
+//-------------------------------------------------------------
+void request_converter::on_query(ipc_msg_t msg)
+{
+  kiq_message& ipc_msg = *(static_cast<kiq_message*>(msg.get()));
+  req.clear();
+  req.query = ipc_msg.payload();
 }
 //-------------------------------------------------------------
 server::server()
