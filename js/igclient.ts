@@ -2,7 +2,8 @@ import lg from './logger'
 import { IgApiClient } from 'instagram-private-api';
 import { GetURLS, GetCredentials, GetMapString, GetMime, IsVideo,
          FetchFile, ReadFile, usermap, request, FormatVideo, FormatImage,
-         CreateImage, FormatLongPost, IGImageFromURL, make_post_from_thread, is_thread_start} from './util'
+         CreateImage, FormatLongPost, IGImageFromURL, make_post_from_thread,
+         is_thread_start, is_ig_user} from './util'
 interface ClientInfo { Status: string, IGUsers: string }
 
 const vid_path    : string = 'temp/Formatted.mp4'
@@ -48,6 +49,12 @@ export class IGClient
   {
     if (this.igusers.has(this.user))
     {
+      const account = this.igusers.get(this.user)
+      if (is_ig_user(account))
+      {
+        lg.info(`${this.user} is already logged in`)
+        return true
+      }
       lg.warn("This user already failed to login")
       return false
     }
@@ -75,6 +82,9 @@ export class IGClient
   //------------------
   public async post(req : request) : Promise<boolean>
   {
+    if (req.q)
+      return await this.do_query(req.q)
+
     this.set_user(req.user)
 
     if (!this.user || !this.pass)
@@ -182,6 +192,26 @@ export class IGClient
 
     lg.warn("No big post")
     return false
+  }
+  //-----------------
+  private async do_query(q : string) : Promise<boolean>
+  {
+    if (!this.user || !this.is_logged_in(this.user))
+    {
+      await this.set_user("DEFAULT_USER")
+      if (!await this.login())
+      {
+        lg.error("Query failed. Unable to login default user")
+        return false
+      }
+    }
+    const value = await this.ig.search.tags(q) // TODO: Parse
+    return (value.length > 0)
+  }
+  //-----------------
+  private is_logged_in(user : string) : boolean
+  {
+    return (this.igusers.has(user) && is_ig_user(this.igusers.get(user)))
   }
 
   private name    : string
