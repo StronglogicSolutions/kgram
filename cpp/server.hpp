@@ -55,6 +55,7 @@ public:
   bool      has_msgs ()                    const;
   void      reply    (bool success = true);
   ipc_msg_t get_msg  ();
+  void      send_msg (ipc_msg_t);
 
 private:
   void run();

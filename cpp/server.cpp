@@ -165,4 +165,21 @@ void server::recv()
   kutils::log("IPC message received");
   replies_pending_++;
 }
+//------------------------------------
+void server::send_msg(ipc_msg_t msg)
+{
+  const auto&  payload   = msg->data();
+  const size_t frame_num = payload.size();
+
+  for (int i = 0; i < frame_num; i++)
+  {
+    auto flag = i == (frame_num - 1) ? zmq::send_flags::none : zmq::send_flags::sndmore;
+    auto data = payload.at(i);
+
+    zmq::message_t message{data.size()};
+    std::memcpy(message.data(), data.data(), data.size());
+
+    tx_.send(message, flag);
+  }
+}
 } // ns kiq
