@@ -9,15 +9,30 @@ interface ClientInfo { Status: string, IGUsers: string }
 const vid_path    : string = 'temp/Formatted.mp4'
 const prev_path   : string = 'temp/preview.jpg'
 const client_name : string = "Instagram Client"
+
+interface ig_feed_item
+{
+  time : number
+  id   : string
+  user : string
+  urls : string
+  text : string
+}
+
+interface transmit_fn
+{
+  (payload : Array<ig_feed_item>) : void
+}
 //----------------------------------
 export class IGClient
 {
-  constructor()
+  constructor(fn : transmit_fn)
   {
     this.name    = client_name
     this.ig      = new IgApiClient()
     this.igusers = new Map<string, boolean>()
     this.rx_req  = new Array<request>()
+    this.request = fn
   }
   //------------------
   public init() : boolean
@@ -205,8 +220,40 @@ export class IGClient
         return false
       }
     }
-    const value = await this.ig.search.tags(q) // TODO: Parse
-    return (value.length > 0)
+
+    const response = await this.ig.feed.tag(q);
+    const payload  = await response.items()
+    if (payload.length)
+    {
+      let feed_items = []
+      for (const item of payload)
+      {
+        const get_vid = videos =>
+        {
+          let width = 0
+          let ret_vid
+          for (const video of videos)
+          {
+            if (video.width > width)
+              ret_vid = video.url
+          }
+        }
+        const ig_feed_item = {user: item.user.username,
+                              time: item.taken_at,
+                              id  : item.id,
+                              text: item.caption,
+                              urls: item.image_versions2.candidates.join('<')}
+
+        if (item.video_versions)
+          ig_feed_item.urls += get_vid(item.video_versions)
+        feed_items.push(ig_feed_item)
+      }
+
+      this.request(feed_items)
+
+      return true
+    }
+    return false
   }
   //-----------------
   private is_logged_in(user : string) : boolean
@@ -219,5 +266,6 @@ export class IGClient
   private pass    : string
   private ig      : IgApiClient
   private igusers : usermap
-  private rx_req  : Array<request>;
+  private rx_req  : Array<request>
+  private request : transmit_fn
 }

@@ -2,8 +2,8 @@ import bindings from 'bindings'
 import { IGClient } from "./igclient"
 import type { request } from './util'
 import lg from './logger'
-const { poll, OnResult } = bindings('kgramIPC')
-const client = new IGClient()
+const { poll, transmit, OnResult } = bindings('kgramIPC')
+const client = new IGClient(transmit)
 
 //-------------MAIN-----------------
 setInterval(() => poll(async (received : request) =>
