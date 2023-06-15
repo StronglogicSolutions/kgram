@@ -2,21 +2,37 @@ import lg from './logger'
 import { IgApiClient } from 'instagram-private-api';
 import { GetURLS, GetCredentials, GetMapString, GetMime, IsVideo,
          FetchFile, ReadFile, usermap, request, FormatVideo, FormatImage,
-         CreateImage, FormatLongPost, IGImageFromURL, make_post_from_thread, is_thread_start} from './util'
+         CreateImage, FormatLongPost, IGImageFromURL, make_post_from_thread,
+         is_thread_start, is_ig_user} from './util'
 interface ClientInfo { Status: string, IGUsers: string }
 
 const vid_path    : string = 'temp/Formatted.mp4'
 const prev_path   : string = 'temp/preview.jpg'
 const client_name : string = "Instagram Client"
+
+interface ig_feed_item
+{
+  time : string
+  id   : string
+  user : string
+  urls : string
+  text : string
+}
+
+interface transmit_fn
+{
+  (payload : Array<ig_feed_item>) : void
+}
 //----------------------------------
 export class IGClient
 {
-  constructor()
+  constructor(fn : transmit_fn)
   {
     this.name    = client_name
     this.ig      = new IgApiClient()
     this.igusers = new Map<string, boolean>()
     this.rx_req  = new Array<request>()
+    this.request = fn
   }
   //------------------
   public init() : boolean
@@ -48,6 +64,12 @@ export class IGClient
   {
     if (this.igusers.has(this.user))
     {
+      const account = this.igusers.get(this.user)
+      if (is_ig_user(account))
+      {
+        lg.info(`${this.user} is already logged in`)
+        return true
+      }
       lg.warn("This user already failed to login")
       return false
     }
@@ -75,6 +97,9 @@ export class IGClient
   //------------------
   public async post(req : request) : Promise<boolean>
   {
+    if (req.q)
+      return await this.do_query(req.q)
+
     this.set_user(req.user)
 
     if (!this.user || !this.pass)
@@ -181,7 +206,61 @@ export class IGClient
     }
 
     lg.warn("No big post")
+
     return false
+  }
+  //-----------------
+  private async do_query(q : string) : Promise<boolean>
+  {
+    if (!this.user || !this.is_logged_in(this.user))
+    {
+      await this.set_user("DEFAULT_USER")
+      if (!await this.login())
+      {
+        lg.error("Query failed. Unable to login default user")
+        return false
+      }
+    }
+
+    lg.info(`Querying Instagram for ${q}`)
+
+    let feed_items = []
+
+    const response = await this.ig.feed.tags(q);
+    for (const item of await response.items())
+    {
+      const get_vid = videos =>
+      {
+        let width = 0
+        let ret_vid
+        for (const video of videos)
+          if (video.width > width)
+            ret_vid = video.url
+        return ret_vid
+      }
+      const ig_feed_item = {user: item.user.username,
+                            time: item.taken_at,
+                            id  : item.id,
+                            text: item.caption.text ,
+                            urls: item.image_versions2 ?
+                                    item.image_versions2.candidates.map(img => img.url).join('<') :
+                                    ""}
+
+      if (item.video_versions)
+        ig_feed_item.urls += get_vid(item.video_versions)
+      feed_items.push(ig_feed_item)
+    }
+
+    lg.trace({ Items: feed_items.length })
+
+    this.request(feed_items)
+
+    return feed_items.length > 0
+  }
+  //-----------------
+  private is_logged_in(user : string) : boolean
+  {
+    return (this.igusers.has(user) && is_ig_user(this.igusers.get(user)))
   }
 
   private name    : string
@@ -189,5 +268,6 @@ export class IGClient
   private pass    : string
   private ig      : IgApiClient
   private igusers : usermap
-  private rx_req  : Array<request>;
+  private rx_req  : Array<request>
+  private request : transmit_fn
 }

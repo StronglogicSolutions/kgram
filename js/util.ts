@@ -45,6 +45,7 @@ export interface request
   text:  string
   urls:  string
   time:  string | number
+  q   :  string
 }
 //----------------------------------
 interface thread_info
@@ -53,7 +54,6 @@ interface thread_info
   url     : string
   indexes : Array<number>
 }
-
 //---------------------------------
 //----------SMOL-------------------
 //---------------------------------
@@ -371,4 +371,9 @@ export const make_post_from_thread = (reqs) : thread_info =>
     return fail_result
 
   return { ...info, text: posts.join('\n')}
+}
+//----------------------------------
+export function is_ig_user(v : IGUser | boolean)
+{
+  return (typeof v === 'object' && Object.keys(v).includes('pk'))
 }
