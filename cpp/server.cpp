@@ -107,21 +107,9 @@ void server::reply(bool success)
     else
       msg = std::make_unique<kiq::fail_message>();
 
-  const auto&  payload   = msg->data();
-  const size_t frame_num = payload.size();
+  kutils::log("Sending reply of ", constants::IPC_MESSAGE_NAMES.at(msg->type()));
+  send_msg(std::move(msg));
 
-  for (int i = 0; i < frame_num; i++)
-  {
-    auto flag = i == (frame_num - 1) ? zmq::send_flags::none : zmq::send_flags::sndmore;
-    auto data = payload.at(i);
-
-    zmq::message_t message{data.size()};
-    std::memcpy(message.data(), data.data(), data.size());
-
-    tx_.send(message, flag);
-  }
-
-  kutils::log("Sent reply of ", constants::IPC_MESSAGE_NAMES.at(msg->type()));
   replies_pending_--;
 }
 
@@ -168,10 +156,10 @@ void server::recv()
 //------------------------------------
 void server::send_msg(ipc_msg_t msg)
 {
-  const auto&  payload   = msg->data();
-  const size_t frame_num = payload.size();
-
-  for (int i = 0; i < frame_num; i++)
+  const auto& payload   = msg->data();
+  const auto  frame_num = payload.size();
+  kutils::log(msg->to_string());
+  for (uint32_t i = 0; i < frame_num; i++)
   {
     auto flag = i == (frame_num - 1) ? zmq::send_flags::none : zmq::send_flags::sndmore;
     auto data = payload.at(i);
