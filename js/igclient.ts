@@ -5,11 +5,11 @@ import { GetURLS, GetCredentials, GetMapString, GetMime, IsVideo,
          CreateImage, FormatLongPost, IGImageFromURL, make_post_from_thread,
          is_thread_start, is_ig_user} from './util'
 interface ClientInfo { Status: string, IGUsers: string }
-
+//----------------------------------
 const vid_path    : string = 'temp/Formatted.mp4'
 const prev_path   : string = 'temp/preview.jpg'
 const client_name : string = "Instagram Client"
-
+//----------------------------------
 interface ig_feed_item
 {
   time : string
@@ -18,10 +18,20 @@ interface ig_feed_item
   urls : string
   text : string
 }
-
+//----------------------------------
 interface transmit_fn
 {
   (payload : Array<ig_feed_item>) : void
+}
+//----------------------------------
+const get_vid = videos =>
+{
+  let width = 0
+  let ret_vid
+  for (const video of videos)
+    if (video.width > width)
+      ret_vid = video.url
+  return ret_vid
 }
 //----------------------------------
 export class IGClient
@@ -229,32 +239,22 @@ export class IGClient
     const response = await this.ig.feed.tags(q);
     for (const item of await response.items())
     {
-      const get_vid = videos =>
-      {
-        let width = 0
-        let ret_vid
-        for (const video of videos)
-          if (video.width > width)
-            ret_vid = video.url
-        return ret_vid
-      }
       const ig_feed_item = {user: item.user.username,
                             time: item.taken_at,
                             id  : item.id,
                             text: item.caption.text ,
                             urls: item.image_versions2 ?
-                                    item.image_versions2.candidates.map(img => img.url).join('<') :
+                                    item.image_versions2.candidates.map(img => img.url).join('>') :
                                     ""}
-
       if (item.video_versions)
-        ig_feed_item.urls += get_vid(item.video_versions)
+        ig_feed_item.urls += (ig_feed_item.urls.length > 0) ? get_vid(item.video_versions) :
+                                                              '>' + get_vid(item.video_versions)
       feed_items.push(ig_feed_item)
     }
 
     lg.trace({ Items: feed_items.length })
 
     this.request(feed_items)
-
     return feed_items.length > 0
   }
   //-----------------
