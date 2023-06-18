@@ -21,7 +21,7 @@ request_t request_converter::receive(ipc_msg_t msg)
 {
   const auto type = msg->type();
 
-  if (type >= constants::IPC_PLATFORM_TYPE)
+  if (type >= constants::IPC_KIQ_MESSAGE)
     m_dispatch_table[type](std::move(msg));
 
   return req;
@@ -141,14 +141,14 @@ void server::recv()
   }
   ipc_msg_t  ipc_msg = DeserializeIPCMessage(std::move(buffer));
   kutils::log("Message type is ", std::to_string(ipc_msg->type()).c_str());
-  const auto decoded = static_cast<platform_message*>(ipc_msg.get());
-  if (is_duplicate(decoded))
+  if (ipc_msg->type() == constants::IPC_PLATFORM_TYPE)
   {
-    kutils::log("Ignoring duplicate IPC message");
-    return;
+    const auto* decoded = static_cast<platform_message*>(ipc_msg.get());
+    if (is_duplicate(decoded))
+      return kutils::log("Ignoring duplicate IPC message");
+    processed_.push_back(decoded->id());
   }
 
-  processed_.push_back(decoded->id());
   msgs_.push_back(std::move(ipc_msg));
   kutils::log("IPC message received");
   replies_pending_++;
