@@ -253,8 +253,10 @@ export class IGClient
     }
 
     lg.trace({ Items: feed_items.length })
-
-    this.request(feed_items)
+    const is_english = (text : string) => true
+    const get_quality_result = (data : Array<ig_feed_item>) => { return data.filter( item => is_english(item.text) && item.urls.length > 0 )}
+    const get_result = data => { let result = get_quality_result(data); if (data.length > 10) data.length = 10; return data}
+    this.request(get_result(feed_items))
     return feed_items.length > 0
   }
   //-----------------
