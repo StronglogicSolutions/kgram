@@ -226,7 +226,7 @@ export class IGClient
     if (await this.post_generated_text(info.text, info.url))
     {
       for (let i = info.indexes.length; i >= 0; i--)
-        this.rx_req.splice(info.indexes[i], 1)
+      this.rx_req.splice(info.indexes[i], 1)
       return true
     }
 
@@ -237,7 +237,10 @@ export class IGClient
   //-----------------
   private async do_query(q : string) : Promise<boolean>
   {
-    const reject_post = item => { return (!item || !item.caption) }
+    const reject_post        = item => { return (!item || !item.caption) }
+    const is_english         = (text : string) => true
+    const get_quality_result = (data : Array<ig_feed_item>) => { return data.filter( item => is_english(item.text) && item.urls.length > 0 )}
+    const get_result         = data => { data = get_quality_result(data); if (data.length > 5) data.length = 5; return data}
 
     if (!this.user || !this.is_logged_in(this.user))
     {
@@ -256,8 +259,8 @@ export class IGClient
     const response = await this.ig.feed.tags(q);
     for (const item of await response.items())
     {
-      if (reject_post)
-        continue
+      if (reject_post(item)) continue
+
       const ig_feed_item = {user: item.user.username,
                             time: item.taken_at,
                             id  : item.id,
@@ -272,9 +275,6 @@ export class IGClient
     }
 
     lg.trace({ Items: feed_items.length })
-    const is_english = (text : string) => true
-    const get_quality_result = (data : Array<ig_feed_item>) => { return data.filter( item => is_english(item.text) && item.urls.length > 0 )}
-    const get_result = data => { let result = get_quality_result(data); if (data.length > 10) data.length = 10; return data}
     this.request(get_result(feed_items))
     return feed_items.length > 0
   }
@@ -282,16 +282,6 @@ export class IGClient
   private is_logged_in(user : string) : boolean
   {
     return (this.igusers.has(user) && is_ig_user(this.igusers.get(user)))
-  }
-
-  public async test()
-  {
-    this.rx_req = req_from_posts(example_posts)
-    await this.set_user("DEFAULT_USER")
-    if (await this.login())
-    {
-      await this.try_big_post()
-    }
   }
 
   private name    : string
