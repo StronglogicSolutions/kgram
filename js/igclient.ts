@@ -283,6 +283,13 @@ export class IGClient
   {
     return (this.igusers.has(user) && is_ig_user(this.igusers.get(user)))
   }
+  //-----------------
+  public reset_users() : void
+  {
+    this.igusers.clear()
+    this.pass = ""
+    this.user = ""
+  }
 
   private name    : string
   private user    : string
