@@ -4,19 +4,7 @@ import { GetURLS, GetCredentials, GetMapString, GetMime, IsVideo,
          FetchFile, ReadFile, usermap, request, FormatVideo, FormatImage,
          CreateImage, FormatLongPost, IGImageFromURL, make_post_from_thread,
          is_thread_start, is_ig_user} from './util'
-import { example_posts } from './testdata'
 
-const req_from_posts = (posts) =>
-{
-  let i = 1
-  const reqs = []
-  for (const post of posts)
-  {
-    reqs.push({ text: post, urls: "", time: i++ })
-  }
-
-  return reqs
-}
 interface ClientInfo { Status: string, IGUsers: string }
 //----------------------------------
 const vid_path    : string = 'temp/Formatted.mp4'
@@ -100,13 +88,10 @@ export class IGClient
     this.ig.state.generateDevice(this.user)
     try
     {
-      // const account = await this.ig.account.login(this.user, this.pass)
-      // lg.info({ username: account.username, id: account.pk })
-      const account = true
+      const account = await this.ig.account.login(this.user, this.pass)
+      lg.info({ username: account.username, id: account.pk })
       if (account && this.igusers.set(this.user, account))
-      {
         return true
-      }
     }
     catch (e)
     {
@@ -212,9 +197,8 @@ export class IGClient
 
     for (let i = 0; i < num; i++)
       items.push({ file: await ReadFile(await CreateImage(strings[i], `page${i + 1}.jpg`)), width: 1080, height: 1080 })
-    // return (items.length > 0 && items[0] &&
-    //         await this.ig.publish.album({ caption, items }) != undefined)
-    return true
+    return (items.length > 0 && items[0] &&
+            await this.ig.publish.album({ caption, items }) != undefined)
   }
   //-----------------
   private async try_big_post() : Promise<boolean>
