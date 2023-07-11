@@ -72,17 +72,24 @@ server::~server()
 //----------------------------------
 void server::start()
 {
-  rx_.bind   (RX_ADDR);
-  tx_.connect(TX_ADDR);
+  try
+  {
+    rx_.bind   (RX_ADDR);
+    tx_.connect(TX_ADDR);
 
-  future_ = std::async(std::launch::async, [this] { run(); });
-  kutils::log("Server listening on ", RX_ADDR);
+    future_ = std::async(std::launch::async, [this] { run(); });
+    kutils::log("Server listening on ", RX_ADDR);
+  }
+  catch (const std::exception& e)
+  {
+    kutils::log("Exception caught during start(): ", e.what());
+  }
 }
 //----------------------------------
 void server::stop()
 {
-  rx_.close();
-  tx_.close();
+  rx_.disconnect();
+  tx_.disconnect();
   active_ = false;
   if (future_.valid())
     future_.wait();
