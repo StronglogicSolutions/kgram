@@ -13,7 +13,6 @@ setInterval(() => poll(async (received : request) =>
   try
   {
     lg.debug(received)
-
     result = await client.post(received)
     if (result)
       lg.info('Success')

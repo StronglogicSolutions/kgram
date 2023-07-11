@@ -4,6 +4,19 @@ import { GetURLS, GetCredentials, GetMapString, GetMime, IsVideo,
          FetchFile, ReadFile, usermap, request, FormatVideo, FormatImage,
          CreateImage, FormatLongPost, IGImageFromURL, make_post_from_thread,
          is_thread_start, is_ig_user} from './util'
+import { example_posts } from './testdata'
+
+const req_from_posts = (posts) =>
+{
+  let i = 1
+  const reqs = []
+  for (const post of posts)
+  {
+    reqs.push({ text: post, urls: "", time: i++ })
+  }
+
+  return reqs
+}
 interface ClientInfo { Status: string, IGUsers: string }
 //----------------------------------
 const vid_path    : string = 'temp/Formatted.mp4'
@@ -87,8 +100,9 @@ export class IGClient
     this.ig.state.generateDevice(this.user)
     try
     {
-      const account = await this.ig.account.login(this.user, this.pass)
-      lg.info({ username: account.username, id: account.pk })
+      // const account = await this.ig.account.login(this.user, this.pass)
+      // lg.info({ username: account.username, id: account.pk })
+      const account = true
       if (account && this.igusers.set(this.user, account))
       {
         return true
@@ -198,8 +212,9 @@ export class IGClient
 
     for (let i = 0; i < num; i++)
       items.push({ file: await ReadFile(await CreateImage(strings[i], `page${i + 1}.jpg`)), width: 1080, height: 1080 })
-    return (items.length > 0 && items[0] &&
-            await this.ig.publish.album({ caption, items }) != undefined)
+    // return (items.length > 0 && items[0] &&
+    //         await this.ig.publish.album({ caption, items }) != undefined)
+    return true
   }
   //-----------------
   private async try_big_post() : Promise<boolean>
@@ -211,7 +226,7 @@ export class IGClient
     if (await this.post_generated_text(info.text, info.url))
     {
       for (let i = info.indexes.length; i >= 0; i--)
-        this.rx_req.splice(info.indexes[i], 1)
+      this.rx_req.splice(info.indexes[i], 1)
       return true
     }
 
@@ -222,6 +237,11 @@ export class IGClient
   //-----------------
   private async do_query(q : string) : Promise<boolean>
   {
+    const reject_post        = item => { return (!item || !item.caption) }
+    const is_english         = (text : string) => true
+    const get_quality_result = (data : Array<ig_feed_item>) => { return data.filter( item => is_english(item.text) && item.urls.length > 0 )}
+    const get_result         = data => { data = get_quality_result(data); if (data.length > 5) data.length = 5; return data}
+
     if (!this.user || !this.is_logged_in(this.user))
     {
       await this.set_user("DEFAULT_USER")
@@ -239,6 +259,8 @@ export class IGClient
     const response = await this.ig.feed.tags(q);
     for (const item of await response.items())
     {
+      if (reject_post(item)) continue
+
       const ig_feed_item = {user: item.user.username,
                             time: item.taken_at,
                             id  : item.id,
@@ -253,9 +275,6 @@ export class IGClient
     }
 
     lg.trace({ Items: feed_items.length })
-    const is_english = (text : string) => true
-    const get_quality_result = (data : Array<ig_feed_item>) => { return data.filter( item => is_english(item.text) && item.urls.length > 0 )}
-    const get_result = data => { let result = get_quality_result(data); if (data.length > 10) data.length = 10; return data}
     this.request(get_result(feed_items))
     return feed_items.length > 0
   }
