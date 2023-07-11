@@ -60,20 +60,47 @@ server::server()
   rx_.set(zmq::sockopt::tcp_keepalive_intvl, 300);
   tx_.set(zmq::sockopt::tcp_keepalive_intvl, 300);
 
-  rx_.bind   (RX_ADDR);
-  tx_.connect(TX_ADDR);
-
-  future_ = std::async(std::launch::async, [this] { run(); });
-  kutils::log("Server listening on ", RX_ADDR);
-
   kiq::set_log_fn([](const char* message) { kutils::log(message);} );
+
+  start();
 }
 //----------------------------------
 server::~server()
 {
+  stop();
+}
+//----------------------------------
+void server::start()
+{
+  try
+  {
+    rx_.bind   (RX_ADDR);
+    tx_.connect(TX_ADDR);
+
+    future_ = std::async(std::launch::async, [this] { run(); });
+    kutils::log("Server listening on ", RX_ADDR);
+  }
+  catch (const std::exception& e)
+  {
+    kutils::log("Exception caught during start(): ", e.what());
+  }
+}
+//----------------------------------
+void server::stop()
+{
+  rx_.close();
+  tx_.close();
   active_ = false;
   if (future_.valid())
     future_.wait();
+  kutils::log("Server has stopped");
+}
+//----------------------------------
+void server::reset()
+{
+  kutils::log("Server is resetting connection");
+  stop ();
+  start();
 }
 //----------------------------------
 bool server::is_active() const
@@ -115,6 +142,7 @@ void server::reply(bool success)
 
 void server::run()
 {
+  kutils::log("Receive worker initiated");
   while (active_)
     recv();
 }

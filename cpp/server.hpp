@@ -56,11 +56,13 @@ public:
   void      reply    (bool success = true);
   ipc_msg_t get_msg  ();
   void      send_msg (ipc_msg_t);
+  void      reset    ();
 
 private:
-  void run();
-
-  void recv();
+  void      stop     ();
+  void      start    ();
+  void      run();
+  void      recv();
   zmq::context_t             context_;
   zmq::socket_t              rx_;
   zmq::socket_t              tx_;
