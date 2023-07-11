@@ -6,7 +6,7 @@ const { poll, transmit, OnResult } = bindings('kgramIPC')
 const client = new IGClient(transmit)
 
 let start_time = process.hrtime.bigint()
-let interval_d : bigint = BigInt(86400000000)
+let interval_d : bigint = BigInt(86400000000000)
 
 //-------------MAIN-----------------
 setInterval(() =>
