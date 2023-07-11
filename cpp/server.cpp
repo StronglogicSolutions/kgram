@@ -88,8 +88,8 @@ void server::start()
 //----------------------------------
 void server::stop()
 {
-  rx_.disconnect();
-  tx_.disconnect();
+  rx_.disconnect(RX_ADDR);
+  tx_.disconnect(TX_ADDR);
   active_ = false;
   if (future_.valid())
     future_.wait();
