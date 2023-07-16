@@ -11,10 +11,10 @@ let interval_d : bigint = BigInt(86400000000000)
 //-------------MAIN-----------------
 setInterval(() =>
 {
+  lg.trace('Node worker polling')
   poll(async (received : request) =>
   {
     let result = false
-    lg.info('Waiting for requests')
     try
     {
       lg.debug(received)

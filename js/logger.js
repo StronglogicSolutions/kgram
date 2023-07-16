@@ -1,18 +1,35 @@
 
 const pino = require('pino')
 
-const config = { level: 'trace' }
+let default_target  = 'pino/file'
+let default_options = { colorize: false }
+let level           = process.env.LOGLEVEL
+if (!level)
+  level = 'trace'
+
+const transport_options = {
+  targets: [
+  {
+    target: 'pino/file',
+    options: {
+      destination: '/tmp/kgram.kiq.log',
+      path: `/tmp/kgram.kiq-${process.pid}.log`
+    }
+  }]
+}
+
+const config = { level }
 
 if (process.env.type !== 'PRODUCTION')
-  config.transport =
-  {
-    target: 'pino-pretty',
-    options: {
-      colorize: true
-    }
-  }
+  transport_options.targets.push(
+    {
+      target: 'pino-pretty',
+      options: { colorize: true }
+    })
 
-const logger = pino(config)
+config.transport = pino.transport(transport_options)
+
+const logger = pino({}, config.transport)
 
 module.exports    = logger
 module.exports.lg = module.exports.logger
