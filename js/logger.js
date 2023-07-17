@@ -3,28 +3,24 @@ const fs = require('fs')
 const pino = require('pino')
 const transport = require('pino/lib/transport')
 
-const streams = [
-  {level: 'info',  stream: fs.createWriteStream(`/tmp/kgram.kiq.log`, {})},
-  {level: 'error', stream: fs.createWriteStream(`/tmp/kgram_err.kiq.log`, {})}
-]
 
 let level = process.env.LOGLEVEL
 if (!level)
-  level = 'trace'
+level = 'trace'
 
+const target  = 'pino/file'
+const path    = `/tmp/kgram.kiq-${process.pid}.log`
+const streams = [ { level,  stream: fs.createWriteStream(path, {}) } ]
 const transport_options = {
   targets: [
   {
     level,
-    target: 'pino/file',
-    options: {
-      destination: '/tmp/kgram.kiq.log',
-      path: `/tmp/kgram.kiq-${process.pid}.log`
-    }
+    target,
+    options: { destination: path }
   },
   {
     level,
-    target: 'pino/file',
+    target,
     options: {}
   }]
 }
@@ -38,7 +34,7 @@ if (process.env.type !== 'PRODUCTION')
   transport_options.targets[1].options.destination = 1
 }
 
-config.transport = transport_options;//pino.transport(transport_options)
+config.transport = transport_options;
 
 const logger = pino(config, streams)
 
