@@ -17,7 +17,7 @@ void poll(const node_inf_t& info)
   node_fnc_t cb  = info[0].As<node_fnc_t>();
 
   if (g_server.has_msgs())
-    cb.Call(env.Global(), { kiq::req_to_node_obj(g_converter.receive(std::move(g_server.get_msg())), env) });
+    cb.Call(env.Global(), { kiq::req_to_node_obj(g_converter.receive(g_server.get_msg()), env) });
 }
 //----------------------------------------------------------------
 void on_result(const node_inf_t& info)
