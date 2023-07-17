@@ -1,6 +1,12 @@
 
+const fs = require('fs')
 const pino = require('pino')
 const transport = require('pino/lib/transport')
+
+const streams = [
+  {level: 'info',  stream: fs.createWriteStream(`/tmp/kgram.kiq.log`, {})},
+  {level: 'error', stream: fs.createWriteStream(`/tmp/kgram_err.kiq.log`, {})}
+]
 
 let level = process.env.LOGLEVEL
 if (!level)
@@ -34,7 +40,7 @@ if (process.env.type !== 'PRODUCTION')
 
 config.transport = transport_options;//pino.transport(transport_options)
 
-const logger = pino(config)
+const logger = pino(config, streams)
 
 module.exports    = logger
 module.exports.lg = module.exports.logger
