@@ -63,6 +63,8 @@ server::server()
   kiq::set_log_fn([](const char* message) { kutils::log(message);} );
 
   start();
+
+  daemon_.add_observer("kgram_server", [this] { kutils::log("Keepalive expired"); reset(); });
 }
 //----------------------------------
 server::~server()
@@ -176,6 +178,9 @@ void server::recv()
       return kutils::log("Ignoring duplicate IPC message");
     processed_.push_back(decoded->id());
   }
+  else
+  if (ipc_msg->type() == constants::IPC_KEEPALIVE_TYPE)
+    daemon_.reset();
 
   msgs_.push_back(std::move(ipc_msg));
   kutils::log("IPC message received");

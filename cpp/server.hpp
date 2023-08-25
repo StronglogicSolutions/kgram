@@ -69,6 +69,7 @@ private:
   std::future<void>          future_;
   bool                       active_{true};
   uint32_t                   replies_pending_{0};
+  session_daemon             daemon_;
   std::deque<kiq::ipc_msg_t> msgs_;
   std::vector<std::string>   processed_;
 }; // server

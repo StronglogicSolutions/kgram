@@ -9,10 +9,6 @@ namespace
 //--------------------NODE----------------------------------------
 void poll(const node_inf_t& info)
 {
-  static kutils::timer<86400000> timer;
-  if (timer.check_and_update())
-    g_server.reset();
-
   node_env_t env = info.Env();
   node_fnc_t cb  = info[0].As<node_fnc_t>();
 
