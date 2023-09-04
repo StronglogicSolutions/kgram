@@ -9,20 +9,22 @@ namespace kiq
 node_obj_t req_to_node_obj(request_t req, node_env_t& env)
 {
   node_obj_t obj = node_obj_t::New(env);
-  obj.Set("user", req.user );
-  obj.Set("text", req.text );
-  obj.Set("urls", req.media);
-  obj.Set("time", req.time );
-  obj.Set("q"   , req.query);
+  obj.Set("user",   req.user );
+  obj.Set("text",   req.text );
+  obj.Set("urls",   req.media);
+  obj.Set("time",   req.time );
+  obj.Set("q"   ,   req.query);
+  obj.Set("sanity", req.sanity);
   return obj;
 }
 //-------------------------------------------------------------
 request_t request_converter::receive(ipc_msg_t msg)
 {
-  const auto type = msg->type();
-
-  if (type >= constants::IPC_KIQ_MESSAGE)
+  req.clear();
+  if (const auto type = msg->type(); type >= constants::IPC_KIQ_MESSAGE)
     m_dispatch_table[type](std::move(msg));
+  else
+    kutils::log("Ignoring IPC: ", constants::IPC_MESSAGE_NAMES.at(msg->type()));
 
   return req;
 }
@@ -40,8 +42,12 @@ void request_converter::on_request(ipc_msg_t msg)
 void request_converter::on_query(ipc_msg_t msg)
 {
   kiq_message& ipc_msg = *(static_cast<kiq_message*>(msg.get()));
-  req.clear();
   req.query = ipc_msg.payload();
+}
+//-------------------------------------------------------------
+void request_converter::on_status(ipc_msg_t)
+{
+  req.sanity = true;
 }
 //-------------------------------------------------------------
 server::server()
