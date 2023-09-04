@@ -41,11 +41,12 @@ export interface credentials_interface
 //---------------------------------
 export interface request
 {
-  user:  string
-  text:  string
-  urls:  string
-  time:  string | number
-  q   :  string
+  user  :  string
+  text  :  string
+  urls  :  string
+  time  :  string | number
+  q     :  string
+  sanity: boolean
 }
 //----------------------------------
 interface thread_info

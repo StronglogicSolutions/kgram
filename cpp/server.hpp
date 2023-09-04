@@ -16,6 +16,7 @@ struct request_t
   std::string media;
   std::string time;
   std::string query;
+  bool        sanity{false};
 
   void clear()
   {
@@ -37,6 +38,7 @@ using dispatch_t    = std::map<uint8_t, msg_handler_t>;
 
   void on_request(ipc_msg_t msg);
   void on_query  (ipc_msg_t msg);
+  void on_status (ipc_msg_t msg);
 
   request_t  req;
   dispatch_t m_dispatch_table{
