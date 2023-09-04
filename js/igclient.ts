@@ -104,8 +104,11 @@ export class IGClient
     return false
   }
   //------------------
-  public async post(req : request) : Promise<boolean>
+  public async process_request(req : request) : Promise<boolean>
   {
+    if (req.sanity)
+      throw new Error("RESTART")
+
     if (req.q)
       return await this.do_query(req.q)
 
@@ -236,6 +239,7 @@ export class IGClient
       }
     }
 
+    q.split(',')
     lg.info(`Querying Instagram for ${q}`)
 
     let feed_items = []
@@ -248,7 +252,7 @@ export class IGClient
       const ig_feed_item = {user: item.user.username,
                             time: item.taken_at,
                             id  : item.id,
-                            text: item.caption.text ,
+                            text: item.caption.text,
                             urls: item.image_versions2 ?
                                     item.image_versions2.candidates.map(img => img.url).join('>') :
                                     ""}

@@ -11,22 +11,25 @@ let interval_d : bigint = BigInt(86400000000000)
 //-------------MAIN-----------------
 setInterval(() =>
 {
-  lg.trace('Node worker polling')
+  lg.trace("Node worker polling")
   poll(async (received : request) =>
   {
     let result = false
     try
     {
       lg.debug(received)
-      result = await client.post(received)
+      result = await client.process_request(received)
       if (result)
-        lg.info('Success')
+        lg.info("Success")
       else
-        lg.error('Posting failed')
+        lg.error("Posting failed")
     }
     catch(e)
     {
       lg.error(e)
+
+      if (e.message === "RESTART")
+        process.exit(1)
     }
     OnResult(result)
     lg.debug(client.info())
