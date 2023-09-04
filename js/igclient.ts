@@ -257,8 +257,8 @@ export class IGClient
                                     item.image_versions2.candidates.map(img => img.url).join('>') :
                                     ""}
       if (item.video_versions)
-        ig_feed_item.urls += (ig_feed_item.urls.length > 0) ? get_vid(item.video_versions) :
-                                                              '>' + get_vid(item.video_versions)
+        ig_feed_item.urls += (ig_feed_item.urls.length > 0) ? '>' + get_vid(item.video_versions) :
+                                                                    get_vid(item.video_versions)
       feed_items.push(ig_feed_item)
     }
 
