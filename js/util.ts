@@ -123,7 +123,10 @@ export function GetCredentials(user: string) : credentials
 //---------------------------------
 export async function FetchFile(url : string) : Promise<string>
 {
-  lg.info("Fetching file")
+  const is_local = path => path.startsWith("file://")
+  if (is_local(url))
+    return url.substring(7)
+
   if (url)
   {
     try
