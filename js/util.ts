@@ -41,11 +41,12 @@ export interface credentials_interface
 //---------------------------------
 export interface request
 {
-  user:  string
-  text:  string
-  urls:  string
-  time:  string | number
-  q   :  string
+  user  :  string
+  text  :  string
+  urls  :  string
+  time  :  string | number
+  q     :  string
+  sanity: boolean
 }
 //----------------------------------
 interface thread_info
@@ -64,7 +65,7 @@ const sanitize = (s : string) => s.replace(/\.\.\.\//g, '').replace(/\.\.\//g, '
 //---------------------------------
 export function GetURLS(s: string) : Array<string>
 {
-  return (s.length > 0) ? s.split('>').filter(u => u) : []
+  return (s && s.length > 0) ? s.split('>').filter(u => u) : []
 }
 
 //---------------------------------
@@ -129,6 +130,7 @@ export async function FetchFile(url : string) : Promise<string>
 
   if (url)
   {
+    lg.info("Fetching file")
     try
     {
       const ext      = url.substring(url.lastIndexOf('.'))
@@ -284,7 +286,7 @@ export async function CreateImage(text : string, name = "generated.png") : Promi
   return name
 }
 //----------------------------------
-export function FormatLongPost(input : string, clean_text : boolean = true) : Array<string>
+export function FormatLongPost(input : string, clean_text : boolean = false) : Array<string>
 {
   const chunks = []
   const text = (clean_text) ? sanitize(input) : input
@@ -359,10 +361,7 @@ export const make_post_from_thread = (reqs) : thread_info =>
     if      (is_newer(req.time, time) && is_thread(req.text))
       time = req.time
     else if (is_end(req.text))
-    {
       has_end = true
-      break
-    }
     else
       continue
 

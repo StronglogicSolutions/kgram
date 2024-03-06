@@ -4,6 +4,7 @@ import { GetURLS, GetCredentials, GetMapString, GetMime, IsVideo,
          FetchFile, ReadFile, usermap, request, FormatVideo, FormatImage,
          CreateImage, FormatLongPost, IGImageFromURL, make_post_from_thread,
          is_thread_start, is_ig_user} from './util'
+
 interface ClientInfo { Status: string, IGUsers: string }
 //----------------------------------
 const vid_path    : string = 'temp/Formatted.mp4'
@@ -90,9 +91,7 @@ export class IGClient
       const account = await this.ig.account.login(this.user, this.pass)
       lg.info({ username: account.username, id: account.pk })
       if (account && this.igusers.set(this.user, account))
-      {
         return true
-      }
     }
     catch (e)
     {
@@ -105,8 +104,11 @@ export class IGClient
     return false
   }
   //------------------
-  public async post(req : request) : Promise<boolean>
+  public async process_request(req : request) : Promise<boolean>
   {
+    if (req.sanity)
+      throw new Error("RESTART")
+
     if (req.q)
       return await this.do_query(req.q)
 
@@ -211,7 +213,7 @@ export class IGClient
     if (await this.post_generated_text(info.text, info.url))
     {
       for (let i = info.indexes.length; i >= 0; i--)
-        this.rx_req.splice(info.indexes[i], 1)
+      this.rx_req.splice(info.indexes[i], 1)
       return true
     }
 
@@ -222,6 +224,11 @@ export class IGClient
   //-----------------
   private async do_query(q : string) : Promise<boolean>
   {
+    const reject_post        = item => { return (!item || !item.caption) }
+    const is_english         = (text : string) => true
+    const get_quality_result = (data : Array<ig_feed_item>) => { return data.filter( item => is_english(item.text) && item.urls.length > 0 )}
+    const get_result         = data => { data = get_quality_result(data); if (data.length > 5) data.length = 5; return data}
+
     if (!this.user || !this.is_logged_in(this.user))
     {
       await this.set_user("DEFAULT_USER")
@@ -232,6 +239,7 @@ export class IGClient
       }
     }
 
+    q.split(',')
     lg.info(`Querying Instagram for ${q}`)
 
     let feed_items = []
@@ -239,23 +247,22 @@ export class IGClient
     const response = await this.ig.feed.tags(q);
     for (const item of await response.items())
     {
+      if (reject_post(item)) continue
+
       const ig_feed_item = {user: item.user.username,
                             time: item.taken_at,
                             id  : item.id,
-                            text: item.caption.text ,
+                            text: item.caption.text,
                             urls: item.image_versions2 ?
                                     item.image_versions2.candidates.map(img => img.url).join('>') :
                                     ""}
       if (item.video_versions)
-        ig_feed_item.urls += (ig_feed_item.urls.length > 0) ? get_vid(item.video_versions) :
-                                                              '>' + get_vid(item.video_versions)
+        ig_feed_item.urls += (ig_feed_item.urls.length > 0) ? '>' + get_vid(item.video_versions) :
+                                                                    get_vid(item.video_versions)
       feed_items.push(ig_feed_item)
     }
 
     lg.trace({ Items: feed_items.length })
-    const is_english = (text : string) => true
-    const get_quality_result = (data : Array<ig_feed_item>) => { return data.filter( item => is_english(item.text) && item.urls.length > 0 )}
-    const get_result = data => { let result = get_quality_result(data); if (data.length > 10) data.length = 10; return data}
     this.request(get_result(feed_items))
     return feed_items.length > 0
   }
@@ -263,6 +270,13 @@ export class IGClient
   private is_logged_in(user : string) : boolean
   {
     return (this.igusers.has(user) && is_ig_user(this.igusers.get(user)))
+  }
+  //-----------------
+  public reset_users() : void
+  {
+    this.igusers.clear()
+    this.pass = ""
+    this.user = ""
   }
 
   private name    : string

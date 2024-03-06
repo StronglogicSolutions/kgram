@@ -9,20 +9,22 @@ namespace kiq
 node_obj_t req_to_node_obj(request_t req, node_env_t& env)
 {
   node_obj_t obj = node_obj_t::New(env);
-  obj.Set("user", req.user );
-  obj.Set("text", req.text );
-  obj.Set("urls", req.media);
-  obj.Set("time", req.time );
-  obj.Set("q"   , req.query);
+  obj.Set("user",   req.user );
+  obj.Set("text",   req.text );
+  obj.Set("urls",   req.media);
+  obj.Set("time",   req.time );
+  obj.Set("q"   ,   req.query);
+  obj.Set("sanity", req.sanity);
   return obj;
 }
 //-------------------------------------------------------------
 request_t request_converter::receive(ipc_msg_t msg)
 {
-  const auto type = msg->type();
-
-  if (type >= constants::IPC_KIQ_MESSAGE)
+  req.clear();
+  if (const auto type = msg->type(); type >= constants::IPC_KIQ_MESSAGE)
     m_dispatch_table[type](std::move(msg));
+  else
+    kutils::log("Ignoring IPC: ", constants::IPC_MESSAGE_NAMES.at(msg->type()));
 
   return req;
 }
@@ -40,8 +42,12 @@ void request_converter::on_request(ipc_msg_t msg)
 void request_converter::on_query(ipc_msg_t msg)
 {
   kiq_message& ipc_msg = *(static_cast<kiq_message*>(msg.get()));
-  req.clear();
   req.query = ipc_msg.payload();
+}
+//-------------------------------------------------------------
+void request_converter::on_status(ipc_msg_t)
+{
+  req.sanity = true;
 }
 //-------------------------------------------------------------
 server::server()
@@ -60,20 +66,49 @@ server::server()
   rx_.set(zmq::sockopt::tcp_keepalive_intvl, 300);
   tx_.set(zmq::sockopt::tcp_keepalive_intvl, 300);
 
-  rx_.bind   (RX_ADDR);
-  tx_.connect(TX_ADDR);
-
-  future_ = std::async(std::launch::async, [this] { run(); });
-  kutils::log("Server listening on ", RX_ADDR);
-
   kiq::set_log_fn([](const char* message) { kutils::log(message);} );
+
+  start();
+
+  daemon_.add_observer("kgram_server", [this] { kutils::log("Keepalive expired"); reset(); });
 }
 //----------------------------------
 server::~server()
 {
+  stop();
+}
+//----------------------------------
+void server::start()
+{
+  try
+  {
+    rx_.bind   (RX_ADDR);
+    tx_.connect(TX_ADDR);
+
+    future_ = std::async(std::launch::async, [this] { run(); });
+    kutils::log("Server listening on ", RX_ADDR);
+  }
+  catch (const std::exception& e)
+  {
+    kutils::log("Exception caught during start(): ", e.what());
+  }
+}
+//----------------------------------
+void server::stop()
+{
+  rx_.disconnect(RX_ADDR);
+  tx_.disconnect(TX_ADDR);
   active_ = false;
   if (future_.valid())
     future_.wait();
+  kutils::log("Server has stopped");
+}
+//----------------------------------
+void server::reset()
+{
+  kutils::log("Server is resetting connection");
+  stop ();
+  start();
 }
 //----------------------------------
 bool server::is_active() const
@@ -115,6 +150,7 @@ void server::reply(bool success)
 
 void server::run()
 {
+  kutils::log("Receive worker initiated");
   while (active_)
     recv();
 }
@@ -148,6 +184,9 @@ void server::recv()
       return kutils::log("Ignoring duplicate IPC message");
     processed_.push_back(decoded->id());
   }
+  else
+  if (ipc_msg->type() == constants::IPC_KEEPALIVE_TYPE)
+    daemon_.reset();
 
   msgs_.push_back(std::move(ipc_msg));
   kutils::log("IPC message received");

@@ -5,25 +5,40 @@ import lg from './logger'
 const { poll, transmit, OnResult } = bindings('kgramIPC')
 const client = new IGClient(transmit)
 
-//-------------MAIN-----------------
-setInterval(() => poll(async (received : request) =>
-{
-  let result = false
-  lg.info('Waiting for requests')
-  try
-  {
-    lg.debug(received)
+let start_time = process.hrtime.bigint()
+let interval_d : bigint = BigInt(86400000000000)
 
-    result = await client.post(received)
-    if (result)
-      lg.info('Success')
-    else
-      lg.error('Posting failed')
-  }
-  catch(e)
+//-------------MAIN-----------------
+setInterval(() =>
+{
+  lg.trace("Node worker polling")
+  poll(async (received : request) =>
   {
-    lg.error(e)
+    let result = false
+    try
+    {
+      lg.debug(received)
+      result = await client.process_request(received)
+      if (result)
+        lg.info("Success")
+      else
+        lg.error("Posting failed")
+    }
+    catch(e)
+    {
+      lg.error(e)
+
+      if (e.message === "RESTART")
+        process.exit(1)
+    }
+    OnResult(result)
+    lg.debug(client.info())
+  })
+
+  if (process.hrtime.bigint() > start_time + interval_d)
+  {
+    lg.debug("Resetting users")
+    client.reset_users()
+    start_time = process.hrtime.bigint();
   }
-  OnResult(result)
-  lg.debug(client.info())
-}), 300)
+}, 300)
