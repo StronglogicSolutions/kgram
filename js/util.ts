@@ -125,7 +125,6 @@ export function GetCredentials(user: string) : credentials
 export async function FetchFile(url : string) : Promise<string>
 {
   const is_local = path => path.startsWith("file://")
-
   if (is_local(url))
     return url.substring(7)
 
